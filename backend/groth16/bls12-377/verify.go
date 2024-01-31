@@ -28,7 +28,7 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/bls12-377/fr/hash_to_field"
 	"github.com/consensys/gnark-crypto/ecc/bls12-377/fr/pedersen"
 	"github.com/consensys/gnark-crypto/utils"
-	"github.com/consensys/gnark/backend"
+	"github.com/danivilardell/gnark/backend"
 	"github.com/consensys/gnark/constraint"
 	"github.com/consensys/gnark/logger"
 )
@@ -67,7 +67,7 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 	// compute (eKrsδ, eArBs)
 	go func() {
 		var errML error
-		doubleML, errML = curve.MillerLoop([]curve.G1Affine{proof.Krs, proof.Ar}, []curve.G2Affine{vk.G2.deltaNeg, proof.Bs})
+		doubleML, errML = curve.MillerLoop([]curve.G1Affine{*proof.Krs.ScalarMultiplication(&proof.Krs, &vk.mu), proof.Ar, *vk.G1.Alpha.ScalarMultiplication(&vk.G1.Alpha, vk.mu.Mul(&vk.mu, &vk.mu))}, []curve.G2Affine{vk.G2.deltaNeg, proof.Bs, vk.G2.Beta})
 		chDone <- errML
 		close(chDone)
 	}()
@@ -120,7 +120,7 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 	var kSumAff curve.G1Affine
 	kSumAff.FromJacobian(&kSum)
 
-	right, err := curve.MillerLoop([]curve.G1Affine{kSumAff}, []curve.G2Affine{vk.G2.gammaNeg})
+	right, err := curve.MillerLoop([]curve.G1Affine{kSumAff}, []curve.G2Affine{*vk.G2.gammaNeg.ScalarMultiplication(&vk.G2.gammaNeg, &vk.mu)})
 	if err != nil {
 		return err
 	}
@@ -131,7 +131,7 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 	}
 
 	right = curve.FinalExponentiation(&right, &doubleML)
-	if !vk.e.Equal(&right) {
+	if !vk.Gt.E.Equal(&right) {
 		return errPairingCheckFailed
 	}
 

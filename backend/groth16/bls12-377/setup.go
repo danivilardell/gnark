@@ -50,6 +50,13 @@ type ProvingKey struct {
 		B           []curve.G2Affine
 	}
 
+	// [E]_T
+	Gt struct {
+		E curve.GT
+	}
+
+	mu 					fr.Element
+
 	// if InfinityA[i] == true, the point G1.A[i] == infinity
 	InfinityA, InfinityB     []bool
 	NbInfinityA, NbInfinityB uint64
@@ -74,8 +81,12 @@ type VerifyingKey struct {
 		deltaNeg, gammaNeg curve.G2Affine // not serialized
 	}
 
-	// e(α, β)
-	e curve.GT // not serialized
+	// [E]_T
+	Gt struct {
+		E curve.GT
+	}
+
+	mu 					big.Int
 
 	CommitmentKey                pedersen.VerifyingKey
 	PublicAndCommitmentCommitted [][]int // indexes of public/commitment committed variables
@@ -340,10 +351,12 @@ func Setup(r1cs *cs.R1CS, pk *ProvingKey, vk *VerifyingKey) error {
 // This is meant to be called internally during setup or deserialization.
 func (vk *VerifyingKey) Precompute() error {
 	var err error
-	vk.e, err = curve.Pair([]curve.G1Affine{vk.G1.Alpha}, []curve.G2Affine{vk.G2.Beta})
+	// E = [0]_T
+	vk.Gt.E, err = curve.Pair([]curve.G1Affine{*vk.G1.Alpha.ScalarMultiplication(&vk.G1.Alpha, big.NewInt(0))}, []curve.G2Affine{vk.G2.Beta})
 	if err != nil {
 		return err
 	}
+	vk.mu = *big.NewInt(1)
 	vk.G2.deltaNeg.Neg(&vk.G2.Delta)
 	vk.G2.gammaNeg.Neg(&vk.G2.Gamma)
 	return nil

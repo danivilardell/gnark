@@ -6,9 +6,13 @@ github.com/consensys/bavard v0.1.13 h1:oLhMLOFGTLdlda/kma4VOJazblc7IM5y5QPd2A/Yj
 github.com/consensys/bavard v0.1.13/go.mod h1:9ItSMtA/dXMAiL7BG6bqW2m3NdSEObYWoH223nGHukI=
 github.com/consensys/compress v0.2.1-0.20240103160955-e4fcce3dc96a h1:0Y7y1JXtP8O/nL7LHpBt62pGZ87so63uWrYqUoq920s=
 github.com/consensys/compress v0.2.1-0.20240103160955-e4fcce3dc96a/go.mod h1:Ne8+cGKjqgjF1dlHapZx38pHzWpaBYhsKxQa+JPl0zM=
+github.com/consensys/gnark v0.0.0 h1:hXl+FLMhPMOKtjA4BC2rlDnNF0Bf9aAiWQAP3TrIprs=
+github.com/consensys/gnark v0.0.0/go.mod h1:L9msUXgaYkcvuvR4vXSc9gOirWS1g6G4e/RFkBUHiOo=
 github.com/consensys/gnark-crypto v0.12.2-0.20231221171913-5d5eded6bb15 h1:mcxhrDtXKIepsKXofxSuXRst+41yzAcoNWKIotsjMTQ=
 github.com/consensys/gnark-crypto v0.12.2-0.20231221171913-5d5eded6bb15/go.mod h1:wKqwsieaKPThcFkHe0d0zMsbHEUWFmZcG7KBCse210o=
 github.com/coreos/go-systemd/v22 v22.5.0/go.mod h1:Y58oyj3AT4RCenI/lSvhwexgC+NSVTIJ3seZv2GcEnc=
+github.com/danivilardell/gnark v0.0.0 h1:hXl+FLMhPMOKtjA4BC2rlDnNF0Bf9aAiWQAP3TrIprs=
+github.com/danivilardell/gnark v0.0.0/go.mod h1:L9msUXgaYkcvuvR4vXSc9gOirWS1g6G4e/RFkBUHiOo=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/fxamacker/cbor/v2 v2.5.0 h1:oHsG0V/Q6E/wqTS2O1Cozzsy69nqCiguo5Q1a1ADivE=
@@ -45,7 +49,6 @@ github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINE
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/rogpeppe/go-internal v1.11.0 h1:cWPaGQEPrBb5/AsnsZesgZZ9yb1OQ+GOISoDNXVBh4M=
-github.com/rogpeppe/go-internal v1.11.0/go.mod h1:ddIwULY96R17DhadqLgMfk9H9tvdUzkipdSkR5nkCZA=
 github.com/rs/xid v1.5.0/go.mod h1:trrq9SKmegXys3aeAKXMUTdJsYXVwGY3RLcfgqegfbg=
 github.com/rs/zerolog v1.30.0 h1:SymVODrcRsaRaSInD9yQtKbtWqwsfoPcRff/oRXLj4c=
 github.com/rs/zerolog v1.30.0/go.mod h1:/tk+P47gFdPXq4QYjvCmT5/Gsug2nagsFWBWhAiSi1w=
