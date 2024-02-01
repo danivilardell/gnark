@@ -88,6 +88,9 @@ type VerifyingKey struct {
 
 	mu 					big.Int
 
+	// e(α, β)
+	e curve.GT // not serialized
+
 	CommitmentKey                pedersen.VerifyingKey
 	PublicAndCommitmentCommitted [][]int // indexes of public/commitment committed variables
 }
@@ -352,6 +355,10 @@ func Setup(r1cs *cs.R1CS, pk *ProvingKey, vk *VerifyingKey) error {
 func (vk *VerifyingKey) Precompute() error {
 	var err error
 	// E = [0]_T
+	vk.e, err = curve.Pair([]curve.G1Affine{vk.G1.Alpha}, []curve.G2Affine{vk.G2.Beta})
+	if err != nil {
+		return err
+	}
 	vk.Gt.E, err = curve.Pair([]curve.G1Affine{*vk.G1.Alpha.ScalarMultiplication(&vk.G1.Alpha, big.NewInt(0))}, []curve.G2Affine{vk.G2.Beta})
 	if err != nil {
 		return err
