@@ -80,7 +80,6 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 		doubleML, errML = curve.MillerLoop([]curve.G1Affine{proof.Krs, proof.Ar}, []curve.G2Affine{vk.G2.deltaNeg, proof.Bs})
 		chDone <- errML
 		left, errML = curve.MillerLoop([]curve.G1Affine{vk.G1.Alpha}, []curve.G2Affine{vk.G2.Beta})
-		chDone <- errML
 		close(chDone)
 	}()
 
@@ -148,6 +147,15 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 
 	right = curve.FinalExponentiation(&right, &doubleML)
 	left = curve.FinalExponentiation(&left)
+
+	mu_sqrd := new(big.Int).Mul(&vk.mu, &vk.mu)
+	mu_sqrd.Mul(mu_sqrd, big.NewInt(-1))
+	left, err = curve.Pair([]curve.G1Affine{vk.G1.Alpha}, []curve.G2Affine{*make([]curve.G2Affine, 1)[0].ScalarMultiplication(&vk.G2.Beta, mu_sqrd)})
+	if err != nil {
+		return err
+	}
+
+	left.Mul(&right, &left)
 	fmt.Println("right: ", right)
 	fmt.Println("left: ", left)
 	fmt.Println("e: ", vk.e)
