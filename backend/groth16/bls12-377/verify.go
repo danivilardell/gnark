@@ -71,7 +71,9 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 		fmt.Println("mu: ", vk.mu)
 		mu_sqrd := new(big.Int).Mul(&vk.mu, &vk.mu)
 		mu_sqrd.Mul(mu_sqrd, big.NewInt(-1))
-		doubleML, errML = curve.MillerLoop([]curve.G1Affine{*proof.Krs.ScalarMultiplication(&proof.Krs, &vk.mu), proof.Ar, *vk.G1.Alpha.ScalarMultiplication(&vk.G1.Alpha, mu_sqrd)}, []curve.G2Affine{vk.G2.deltaNeg, proof.Bs, vk.G2.Beta})
+		krs_times_mu := make([]curve.G1Affine, 1)[0].ScalarMultiplication(&proof.Krs, &vk.mu)
+		alpha_times_mu_sqrd := make([]curve.G1Affine, 1)[0].ScalarMultiplication(&vk.G1.Alpha, mu_sqrd)
+		doubleML, errML = curve.MillerLoop([]curve.G1Affine{*krs_times_mu, proof.Ar, *alpha_times_mu_sqrd}, []curve.G2Affine{vk.G2.deltaNeg, proof.Bs, vk.G2.Beta})
 		chDone <- errML
 		close(chDone)
 	}()
@@ -124,12 +126,13 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 	var kSumAff curve.G1Affine
 	kSumAff.FromJacobian(&kSum)
 
-	right, err := curve.MillerLoop([]curve.G1Affine{kSumAff}, []curve.G2Affine{*vk.G2.gammaNeg.ScalarMultiplication(&vk.G2.gammaNeg, &vk.mu)})
+	gamma_neg_times_mu := make([]curve.G2Affine, 1)[0].ScalarMultiplication(&vk.G2.gammaNeg, &vk.mu)
+	right, err := curve.MillerLoop([]curve.G1Affine{kSumAff}, []curve.G2Affine{*gamma_neg_times_mu})
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("mul by mu: ", *vk.G2.gammaNeg.ScalarMultiplication(&vk.G2.gammaNeg, &vk.mu))
+	fmt.Println("mul by mu: ", *gamma_neg_times_mu)
 	fmt.Println("no mul by mu: ", vk.G2.gammaNeg)
 
 	fmt.Println("E", vk.Gt.E)
