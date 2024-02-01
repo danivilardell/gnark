@@ -69,14 +69,7 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 	// compute (eKrsδ, eArBs, ealphaBeta)
 	go func() {
 		var errML error
-		fmt.Println("mu: ", vk.mu)
-		mu_sqrd := new(big.Int).Mul(&vk.mu, &vk.mu)
-		mu_sqrd.Mul(mu_sqrd, big.NewInt(-1))
-		fmt.Println("Krs: ", proof.Krs)
 		krs_times_mu := make([]curve.G1Affine, 1)[0].ScalarMultiplication(&proof.Krs, &vk.mu)
-		fmt.Println("krs_times_mu: ", krs_times_mu)
-		//alpha_times_mu_sqrd := make([]curve.G1Affine, 1)[0].ScalarMultiplication(&vk.G1.Alpha, mu_sqrd)
-		//doubleML, errML = curve.MillerLoop([]curve.G1Affine{proof.Krs, proof.Ar, vk.G1.Alpha}, []curve.G2Affine{vk.G2.deltaNeg, proof.Bs, vk.G2.Beta})
 		doubleML, errML = curve.MillerLoop([]curve.G1Affine{*krs_times_mu, proof.Ar}, []curve.G2Affine{vk.G2.deltaNeg, proof.Bs})
 		chDone <- errML
 		left, errML = curve.MillerLoop([]curve.G1Affine{vk.G1.Alpha}, []curve.G2Affine{vk.G2.Beta})
@@ -137,28 +130,22 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 		return err
 	}
 
-	fmt.Println("mul by mu: ", *gamma_neg_times_mu)
-	fmt.Println("no mul by mu: ", vk.G2.gammaNeg)
-
 	// wait for (eKrsδ, eArBs)
 	if err := <-chDone; err != nil {
 		return err
 	}
 
 	right = curve.FinalExponentiation(&right, &doubleML)
-	left = curve.FinalExponentiation(&left)
-
-	//mu_sqrd := new(big.Int).Mul(&vk.mu, &vk.mu)
-	left = vk.e
-	fmt.Println("left: ", left)
-	left = *left.Inverse(&left)
-	fmt.Println("left: ", left)
+	mu_sqrd := new(big.Int).Mul(&vk.mu, &vk.mu)
+	vk.e.Exp(vk.e, mu_sqrd)
+	vk.e.Inverse(&vk.e)
+	fmt.Println("left: ", vk.e)
 	if err != nil {
 		return err
 	}
-	left = *left.Mul(&right, &left)
-	
-	if !vk.Gt.E.Equal(&left) {
+	vk.e.Mul(&right, &vk.e)
+
+	if !vk.Gt.E.Equal(&vk.e) {
 		return errPairingCheckFailed
 	}
 
