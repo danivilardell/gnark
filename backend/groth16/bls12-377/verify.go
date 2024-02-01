@@ -150,13 +150,15 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 
 	mu_sqrd := new(big.Int).Mul(&vk.mu, &vk.mu)
 	left, err = curve.Pair([]curve.G1Affine{vk.G1.Alpha}, []curve.G2Affine{*make([]curve.G2Affine, 1)[0].ScalarMultiplication(&vk.G2.Beta, mu_sqrd)})
-	left.Inverse(&left)
+	fmt.Println("left: ", left)
+	left = *left.Inverse(&left)
+	fmt.Println("left: ", left)
 	if err != nil {
 		return err
 	}
 
 	vk.Gt.E = make([]curve.GT, 1)[0]
-	left.Mul(&right, &left)
+	left = *left.Mul(&right, &left)
 	fmt.Println("right: ", right)
 	fmt.Println("left: ", left)
 
