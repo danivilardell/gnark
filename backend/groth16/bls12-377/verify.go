@@ -65,9 +65,10 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 	var doubleML curve.GT
 	chDone := make(chan error, 1)
 
-	// compute (eKrsδ, eArBs)
+	// compute (eKrsδ, eArBs, ealphaBeta)
 	go func() {
 		var errML error
+		fmt.Println(vk.mu)
 		doubleML, errML = curve.MillerLoop([]curve.G1Affine{*proof.Krs.ScalarMultiplication(&proof.Krs, &vk.mu), proof.Ar, *vk.G1.Alpha.ScalarMultiplication(&vk.G1.Alpha, vk.mu.Mul(&vk.mu, vk.mu.Mul(&vk.mu, big.NewInt(-1))))}, []curve.G2Affine{vk.G2.deltaNeg, proof.Bs, vk.G2.Beta})
 		chDone <- errML
 		close(chDone)
@@ -126,6 +127,8 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 		return err
 	}
 
+	fmt.Println(vk.G2.gammaNeg.ScalarMultiplication(&vk.G2.gammaNeg, &vk.mu))
+	fmt.Println(vk.G2.gammaNeg)
 	// wait for (eKrsδ, eArBs)
 	if err := <-chDone; err != nil {
 		return err
