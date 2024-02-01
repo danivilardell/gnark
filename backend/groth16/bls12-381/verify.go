@@ -130,6 +130,8 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 		return err
 	}
 
+	fmt.Println("E", vk.e)
+	fmt.Println("right", right)
 	right = curve.FinalExponentiation(&right, &doubleML)
 	if !vk.e.Equal(&right) {
 		return errPairingCheckFailed
