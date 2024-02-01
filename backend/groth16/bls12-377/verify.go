@@ -133,7 +133,7 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 	kSumAff.FromJacobian(&kSum)
 
 	gamma_neg_times_mu := make([]curve.G2Affine, 1)[0].ScalarMultiplication(&vk.G2.gammaNeg, &vk.mu)
-	right, err := curve.MillerLoop([]curve.G1Affine{kSumAff}, []curve.G2Affine{*gamma_neg_times_mu})
+	right, err := curve.MillerLoop([]curve.G1Affine{kSumAff}, []curve.G2Affine{vk.G2.gammaNeg})
 	if err != nil {
 		return err
 	}
@@ -141,8 +141,6 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 	fmt.Println("mul by mu: ", *gamma_neg_times_mu)
 	fmt.Println("no mul by mu: ", vk.G2.gammaNeg)
 
-	fmt.Println("E", vk.Gt.E)
-	fmt.Println("right", right)
 	// wait for (eKrsδ, eArBs)
 	if err := <-chDone; err != nil {
 		return err
@@ -150,6 +148,8 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 
 	right = curve.FinalExponentiation(&right, &doubleML)
 	left = curve.FinalExponentiation(&left)
+	fmt.Println("right: ", right)
+	fmt.Println("left: ", left)
 	if !left.Equal(&right) {
 		return errPairingCheckFailed
 	}
