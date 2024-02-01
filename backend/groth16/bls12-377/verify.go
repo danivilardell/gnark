@@ -134,13 +134,12 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 	}
 
 	right = curve.FinalExponentiation(&right, &doubleML)
+
+	// vk.e is e(α, β), we want e(α, β)^{-mu^2}
 	mu_sqrd := new(big.Int).Mul(&vk.mu, &vk.mu)
 	vk.e.Exp(vk.e, mu_sqrd)
 	vk.e.Inverse(&vk.e)
-	fmt.Println("left: ", vk.e)
-	if err != nil {
-		return err
-	}
+
 	vk.e.Mul(&right, &vk.e)
 
 	if !vk.Gt.E.Equal(&vk.e) {
