@@ -149,7 +149,7 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 	left = curve.FinalExponentiation(&left)
 
 	//mu_sqrd := new(big.Int).Mul(&vk.mu, &vk.mu)
-	left, err = curve.Pair([]curve.G1Affine{vk.G1.Alpha}, []curve.G2Affine{vk.G2.Beta})
+	left = vk.e
 	fmt.Println("left: ", left)
 	left = *left.Inverse(&left)
 	fmt.Println("left: ", left)
