@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/big"
 	"time"
 
 	"github.com/consensys/gnark-crypto/ecc"
@@ -67,7 +68,7 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 	// compute (eKrsδ, eArBs)
 	go func() {
 		var errML error
-		doubleML, errML = curve.MillerLoop([]curve.G1Affine{*proof.Krs.ScalarMultiplication(&proof.Krs, &vk.mu), proof.Ar, *vk.G1.Alpha.ScalarMultiplication(&vk.G1.Alpha, vk.mu.Mul(&vk.mu, &vk.mu))}, []curve.G2Affine{vk.G2.deltaNeg, proof.Bs, vk.G2.Beta})
+		doubleML, errML = curve.MillerLoop([]curve.G1Affine{*proof.Krs.ScalarMultiplication(&proof.Krs, &vk.mu), proof.Ar, *vk.G1.Alpha.ScalarMultiplication(&vk.G1.Alpha, vk.mu.Mul(&vk.mu, vk.mu.Mul(&vk.mu, big.NewInt(-1))))}, []curve.G2Affine{vk.G2.deltaNeg, proof.Bs, vk.G2.Beta})
 		chDone <- errML
 		close(chDone)
 	}()
