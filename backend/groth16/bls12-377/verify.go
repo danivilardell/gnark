@@ -157,7 +157,6 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 		return err
 	}
 
-	vk.Gt.E = make([]curve.GT, 1)[0]
 	left = *left.Mul(&right, &left)
 	fmt.Println("right: ", right)
 	fmt.Println("left: ", left)
