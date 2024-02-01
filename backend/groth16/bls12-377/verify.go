@@ -77,7 +77,7 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 		fmt.Println("krs_times_mu: ", krs_times_mu)
 		//alpha_times_mu_sqrd := make([]curve.G1Affine, 1)[0].ScalarMultiplication(&vk.G1.Alpha, mu_sqrd)
 		//doubleML, errML = curve.MillerLoop([]curve.G1Affine{proof.Krs, proof.Ar, vk.G1.Alpha}, []curve.G2Affine{vk.G2.deltaNeg, proof.Bs, vk.G2.Beta})
-		doubleML, errML = curve.MillerLoop([]curve.G1Affine{proof.Krs, proof.Ar}, []curve.G2Affine{vk.G2.deltaNeg, proof.Bs})
+		doubleML, errML = curve.MillerLoop([]curve.G1Affine{*krs_times_mu, proof.Ar}, []curve.G2Affine{vk.G2.deltaNeg, proof.Bs})
 		chDone <- errML
 		left, errML = curve.MillerLoop([]curve.G1Affine{vk.G1.Alpha}, []curve.G2Affine{vk.G2.Beta})
 		close(chDone)
@@ -132,7 +132,7 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 	kSumAff.FromJacobian(&kSum)
 
 	gamma_neg_times_mu := make([]curve.G2Affine, 1)[0].ScalarMultiplication(&vk.G2.gammaNeg, &vk.mu)
-	right, err := curve.MillerLoop([]curve.G1Affine{kSumAff}, []curve.G2Affine{vk.G2.gammaNeg})
+	right, err := curve.MillerLoop([]curve.G1Affine{kSumAff}, []curve.G2Affine{*gamma_neg_times_mu})
 	if err != nil {
 		return err
 	}
@@ -159,8 +159,10 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 	left.Mul(&right, &left)
 	fmt.Println("right: ", right)
 	fmt.Println("left: ", left)
-	fmt.Println("e: ", vk.e)
-	if !vk.e.Equal(&right) {
+
+	fmt.Println("E: ", vk.Gt.E)
+	fmt.Println("left: ", left)
+	if !vk.Gt.E.Equal(&left) {
 		return errPairingCheckFailed
 	}
 
