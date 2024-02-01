@@ -354,11 +354,12 @@ func Setup(r1cs *cs.R1CS, pk *ProvingKey, vk *VerifyingKey) error {
 // This is meant to be called internally during setup or deserialization.
 func (vk *VerifyingKey) Precompute() error {
 	var err error
-	// E = [0]_T
+	
 	vk.e, err = curve.Pair([]curve.G1Affine{vk.G1.Alpha}, []curve.G2Affine{vk.G2.Beta})
 	if err != nil {
 		return err
 	}
+	// E = [0]_T the point at infinity
 	vk.Gt.E, err = curve.Pair([]curve.G1Affine{*vk.G1.Alpha.ScalarMultiplication(&vk.G1.Alpha, big.NewInt(0))}, []curve.G2Affine{vk.G2.Beta})
 	if err != nil {
 		return err
