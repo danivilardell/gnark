@@ -69,7 +69,9 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 	go func() {
 		var errML error
 		fmt.Println("mu: ", vk.mu)
-		doubleML, errML = curve.MillerLoop([]curve.G1Affine{*proof.Krs.ScalarMultiplication(&proof.Krs, &vk.mu), proof.Ar, *vk.G1.Alpha.ScalarMultiplication(&vk.G1.Alpha, vk.mu.Mul(&vk.mu, vk.mu.Mul(&vk.mu, big.NewInt(-1))))}, []curve.G2Affine{vk.G2.deltaNeg, proof.Bs, vk.G2.Beta})
+		mu_sqrd := new(big.Int).Mul(&vk.mu, &vk.mu)
+		mu_sqrd.Mul(mu_sqrd, big.NewInt(-1))
+		doubleML, errML = curve.MillerLoop([]curve.G1Affine{*proof.Krs.ScalarMultiplication(&proof.Krs, &vk.mu), proof.Ar, *vk.G1.Alpha.ScalarMultiplication(&vk.G1.Alpha, mu_sqrd)}, []curve.G2Affine{vk.G2.deltaNeg, proof.Bs, vk.G2.Beta})
 		chDone <- errML
 		close(chDone)
 	}()
@@ -130,6 +132,7 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 	fmt.Println("mul by mu: ", *vk.G2.gammaNeg.ScalarMultiplication(&vk.G2.gammaNeg, &vk.mu))
 	fmt.Println("no mul by mu: ", vk.G2.gammaNeg)
 
+	fmt.Println("E", vk.Gt.E)
 	// wait for (eKrsδ, eArBs)
 	if err := <-chDone; err != nil {
 		return err
