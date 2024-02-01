@@ -63,7 +63,6 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 	}
 
 	var doubleML curve.GT
-	var left curve.GT
 	chDone := make(chan error, 1)
 
 	// compute (eKrsδ, eArBs, ealphaBeta)
@@ -72,7 +71,6 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 		krs_times_mu := make([]curve.G1Affine, 1)[0].ScalarMultiplication(&proof.Krs, &vk.mu)
 		doubleML, errML = curve.MillerLoop([]curve.G1Affine{*krs_times_mu, proof.Ar}, []curve.G2Affine{vk.G2.deltaNeg, proof.Bs})
 		chDone <- errML
-		left, errML = curve.MillerLoop([]curve.G1Affine{vk.G1.Alpha}, []curve.G2Affine{vk.G2.Beta})
 		close(chDone)
 	}()
 
