@@ -163,7 +163,7 @@ func Verify(proof Proof, vk VerifyingKey, publicWitness witness.Witness, opts ..
 func VerifyFolded(proof Proof, vk VerifyingKey, publicWitness []witness.Witness, opts ...backend.VerifierOption) error {
 	switch _proof := proof.(type) {
 	case *groth16_bls12377.Proof:
-		wit := []fr_bls12377.Vector{}
+		wit := []witness.Witness{}
 		for i, _ := range publicWitness {
 			wit = append(wit, publicWitness[i].Vector().(fr_bls12377.Vector))
 		}
