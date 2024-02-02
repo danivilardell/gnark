@@ -163,11 +163,8 @@ func Verify(proof Proof, vk VerifyingKey, publicWitness witness.Witness, opts ..
 func VerifyFolded(proof Proof, vk VerifyingKey, publicWitness []witness.Witness, opts ...backend.VerifierOption) error {
 	switch _proof := proof.(type) {
 	case *groth16_bls12377.Proof:
-		wit := []witness.Witness{}
-		for i, _ := range publicWitness {
-			wit = append(wit, publicWitness[i].Vector().(fr_bls12377.Vector))
-		}
-		return groth16_bls12377.VerifyFolded(_proof, vk.(*groth16_bls12377.VerifyingKey), wit, opts...)
+
+		return groth16_bls12377.VerifyFolded(_proof, vk.(*groth16_bls12377.VerifyingKey), [2]fr_bls12377.Vector{publicWitness[0].Vector().(fr_bls12377.Vector), publicWitness[1].Vector().(fr_bls12377.Vector)}, opts...)
 	default:
 		panic("unrecognized R1CS curve type")
 	}
