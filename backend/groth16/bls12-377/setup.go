@@ -81,18 +81,28 @@ type VerifyingKey struct {
 		deltaNeg, gammaNeg curve.G2Affine // not serialized
 	}
 
-	// [E]_T
-	Gt struct {
-		E curve.GT
-	}
-
-	mu 					big.Int
-
 	// e(α, β)
 	e curve.GT // not serialized
 
 	CommitmentKey                pedersen.VerifyingKey
 	PublicAndCommitmentCommitted [][]int // indexes of public/commitment committed variables
+}
+
+type PublicWitness struct {
+	Public 	[]fr.Element
+	E 		curve.GT
+	mu 		big.Int
+}
+
+type FoldedWitness struct {
+	H   curve.G1Affine
+	E   curve.GT
+	mu  big.Int
+}
+
+type FoldingParameters struct {
+	T 		curve.GT
+	R 	    big.Int
 }
 
 // Setup constructs the SRS
@@ -359,14 +369,48 @@ func (vk *VerifyingKey) Precompute() error {
 	if err != nil {
 		return err
 	}
+	
+	vk.G2.deltaNeg.Neg(&vk.G2.Delta)
+	vk.G2.gammaNeg.Neg(&vk.G2.Gamma)
+	return nil
+}
+
+func (foldedWitness *FoldedWitness) foldWitnesses(publicWitness []PublicWitness, foldingParameters []FoldingParameters, vk VerifyingKey, proofs []Proof) error {
+	for i := range publicWitness {
+		foldedWitness.mu.Add(&foldedWitness.mu, big.NewInt(0).Mul(&publicWitness[i].mu, &foldingParameters[i].R))
+		rr := big.NewInt(0).Mul(&foldingParameters[i].R, &foldingParameters[i].R)
+		foldedWitness.E.Add(&foldedWitness.E, make([]curve.GT, 1)[0].Add(
+			make([]curve.GT, 1)[0].Exp(foldingParameters[i].T, &foldingParameters[i].R), 
+			make([]curve.GT, 1)[0].Exp(publicWitness[i].E, rr),
+		))
+
+		var kSum curve.G1Jac
+		if _, err := kSum.MultiExp(vk.G1.K[1:], publicWitness[i].Public, ecc.MultiExpConfig{}); err != nil {
+			return err
+		}
+		kSum.AddMixed(&vk.G1.K[0])
+
+		for i := range proofs[i].Commitments {
+			kSum.AddMixed(&proofs[i].Commitments[i])
+		}
+
+		var kSumAff curve.G1Affine
+		kSumAff.FromJacobian(&kSum)
+
+		foldedWitness.H.Add(&foldedWitness.H, make([]curve.G1Affine, 1)[0].ScalarMultiplication(&kSumAff, &foldingParameters[i].R))
+	}
+
+	return nil
+}
+
+func (witness *PublicWitness) SetStartingParameters() error {
 	// E = [0]_T the point at infinity
-	vk.Gt.E, err = curve.Pair([]curve.G1Affine{*vk.G1.Alpha.ScalarMultiplication(&vk.G1.Alpha, big.NewInt(0))}, []curve.G2Affine{vk.G2.Beta})
+	var err error
+	witness.E, err = curve.Pair([]curve.G1Affine{*make([]curve.G1Affine, 1)[0].ScalarMultiplication(&make([]curve.G1Affine, 1)[0], big.NewInt(0))}, make([]curve.G2Affine, 1))
 	if err != nil {
 		return err
 	}
-	vk.mu = *big.NewInt(1)
-	vk.G2.deltaNeg.Neg(&vk.G2.Delta)
-	vk.G2.gammaNeg.Neg(&vk.G2.Gamma)
+	witness.mu = *big.NewInt(1)
 	return nil
 }
 

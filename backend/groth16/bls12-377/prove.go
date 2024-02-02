@@ -49,6 +49,11 @@ type Proof struct {
 	CommitmentPok curve.G1Affine   // Batched proof of knowledge of the above commitments
 }
 
+type FoldedProof struct {
+	Ar, Krs	   curve.G1Affine
+	Bs		   curve.G2Affine
+}
+
 // isValid ensures proof elements are in the correct subgroup
 func (proof *Proof) isValid() bool {
 	return proof.Ar.IsInSubGroup() && proof.Krs.IsInSubGroup() && proof.Bs.IsInSubGroup()
