@@ -160,6 +160,19 @@ func Verify(proof Proof, vk VerifyingKey, publicWitness witness.Witness, opts ..
 	}
 }
 
+func VerifyFolded(proof Proof, vk VerifyingKey, publicWitness []witness.Witness, opts ...backend.VerifierOption) error {
+	switch _proof := proof.(type) {
+	case *groth16_bls12377.Proof:
+		wit := make(fr_bls12377.Vector, len(publicWitness))
+		for i, _ := range publicWitness {
+			wit[i] = publicWitness[i].Vector().(fr_bls12377.Vector)
+		}
+		return groth16_bls12377.VerifyFolded(_proof, vk.(*groth16_bls12377.VerifyingKey), wit, opts...)
+	default:
+		panic("unrecognized R1CS curve type")
+	}
+}
+
 // Prove runs the groth16.Prove algorithm.
 //
 // if the force flag is set:
