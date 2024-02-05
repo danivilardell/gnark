@@ -20,6 +20,7 @@
 package groth16
 
 import (
+	"fmt"
 	"io"
 
 	"github.com/consensys/gnark-crypto/ecc"
@@ -164,7 +165,7 @@ func VerifyFolded(proof Proof, vk VerifyingKey, publicWitness witness.Witness) e
 	switch _proof := proof.(type) {
 	case *groth16_bls12377.Proof:
 		witness, _ := publicWitness.Vector().(fr_bls12377.Vector)
-
+		fmt.Println(len(witness))
 		return groth16_bls12377.VerifyFolded(_proof, vk.(*groth16_bls12377.VerifyingKey), witness, witness)
 	default:
 		panic("unrecognized R1CS curve type")
