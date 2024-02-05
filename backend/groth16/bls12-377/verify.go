@@ -143,14 +143,7 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 }
 
 // Verify verifies a proof with given VerifyingKey and publicWitness
-func VerifyFolded(proof *Proof, vk *VerifyingKey, publicWitness []PublicWitness, opts ...backend.VerifierOption) error {
-	opt, err := backend.NewVerifierConfig(opts...)
-	if err != nil {
-		return fmt.Errorf("new verifier config: %w", err)
-	}
-	if opt.HashToFieldFn == nil {
-		opt.HashToFieldFn = hash_to_field.New([]byte(constraint.CommitmentDst))
-	}
+func VerifyFolded(proof *Proof, vk *VerifyingKey, publicWitness ...PublicWitness) error {
 
 	nbPublicVars := len(vk.G1.K) - len(vk.PublicAndCommitmentCommitted)
 
