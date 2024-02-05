@@ -160,6 +160,7 @@ func Verify(proof Proof, vk VerifyingKey, publicWitness witness.Witness, opts ..
 	}
 }
 
+/*
 func VerifyFolded(proof Proof, vk VerifyingKey, publicWitness witness.Witness) error {
 	switch _proof := proof.(type) {
 	case *groth16_bls12377.Proof:
@@ -171,7 +172,7 @@ func VerifyFolded(proof Proof, vk VerifyingKey, publicWitness witness.Witness) e
 	default:
 		panic("unrecognized R1CS curve type")
 	}
-}
+}*/
 
 // Prove runs the groth16.Prove algorithm.
 //
