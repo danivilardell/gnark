@@ -24,7 +24,9 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/bls12-377/fr"
 	"github.com/consensys/gnark-crypto/ecc/bls12-377/fr/fft"
 	"github.com/consensys/gnark-crypto/ecc/bls12-377/fr/pedersen"
+	"github.com/consensys/gnark-crypto/utils"
 	"github.com/consensys/gnark/backend/groth16/internal"
+	"github.com/consensys/gnark/backend"
 	"github.com/consensys/gnark/constraint"
 	cs "github.com/consensys/gnark/constraint/bls12-377"
 	"math/big"
@@ -376,7 +378,11 @@ func (vk *VerifyingKey) Precompute() error {
 	return nil
 }
 
-func (foldedWitness *FoldedWitness) foldWitnesses(publicWitness []PublicWitness, foldingParameters []FoldingParameters, vk VerifyingKey, proofs []Proof) error {
+func (foldedWitness *FoldedWitness) foldWitnesses(publicWitness []PublicWitness, foldingParameters []FoldingParameters, vk VerifyingKey, proofs []Proof, opts ...backend.VerifierOption) error {
+	opt, err := backend.NewVerifierConfig(opts...)
+	if err != nil {
+		return fmt.Errorf("new verifier config: %w", err)
+	}
 	for i := range publicWitness {
 		fmt.Println("Folding Parameters: ", foldingParameters[i].R)
 		fmt.Println("Public Witness: ", publicWitness[i].mu)
@@ -386,6 +392,29 @@ func (foldedWitness *FoldedWitness) foldWitnesses(publicWitness []PublicWitness,
 			make([]curve.GT, 1)[0].Exp(foldingParameters[i].T, &foldingParameters[i].R), 
 			make([]curve.GT, 1)[0].Exp(publicWitness[i].E, rr),
 		))
+		maxNbPublicCommitted := 0
+		for _, s := range vk.PublicAndCommitmentCommitted { // iterate over commitments
+			maxNbPublicCommitted = utils.Max(maxNbPublicCommitted, len(s))
+		}
+		commitmentPrehashSerialized := make([]byte, curve.SizeOfG1AffineUncompressed+maxNbPublicCommitted*fr.Bytes)
+		for i := range vk.PublicAndCommitmentCommitted { // solveCommitmentWire
+			copy(commitmentPrehashSerialized, proofs[i].Commitments[i].Marshal())
+			offset := curve.SizeOfG1AffineUncompressed
+			for j := range vk.PublicAndCommitmentCommitted[i] {
+				copy(commitmentPrehashSerialized[offset:], publicWitness[i].Public[vk.PublicAndCommitmentCommitted[i][j]-1].Marshal())
+				offset += fr.Bytes
+			}
+			opt.HashToFieldFn.Write(commitmentPrehashSerialized[:offset])
+			hashBts := opt.HashToFieldFn.Sum(nil)
+			opt.HashToFieldFn.Reset()
+			nbBuf := fr.Bytes
+			if opt.HashToFieldFn.Size() < fr.Bytes {
+				nbBuf = opt.HashToFieldFn.Size()
+			}
+			var res fr.Element
+			res.SetBytes(hashBts[:nbBuf])
+			publicWitness[i].Public = append(publicWitness[i].Public, res)
+		}
 
 		var kSum curve.G1Jac
 		if _, err := kSum.MultiExp(vk.G1.K[1:], publicWitness[i].Public, ecc.MultiExpConfig{}); err != nil {
