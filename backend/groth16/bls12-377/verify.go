@@ -178,7 +178,9 @@ func VerifyFolded(proof *Proof, vk *VerifyingKey, publicWitness ...fr.Vector) er
 		return err
 	}
 	fmt.Println("folding witnesses")
+	fmt.Println("foldWitnesses1: ", foldedWitness.mu, foldedWitness.H, foldedWitness.E)
 	foldedWitness.foldWitnesses([]PublicWitness{witness, witness}, []FoldingParameters{startingFoldingPars, *foldingParameters}, *vk, []Proof{*proof, *proof})
+	fmt.Println("foldWitnesses2: ", foldedWitness.mu, foldedWitness.H, foldedWitness.E)
 
 	// compute (eKrsδ, eArBs, ealphaBeta)
 	go func() {
