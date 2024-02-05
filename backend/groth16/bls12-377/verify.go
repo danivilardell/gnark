@@ -145,18 +145,18 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 // Verify verifies a proof with given VerifyingKey and publicWitness
 func VerifyFolded(proof *Proof, vk *VerifyingKey, publicWitness ...fr.Vector) error {
 
-	nbPublicVars := len(vk.G1.K) - len(vk.PublicAndCommitmentCommitted)
+	//nbPublicVars := len(vk.G1.K) - len(vk.PublicAndCommitmentCommitted)
 
 	witness := PublicWitness{}
-	witness.Public = publicWitness
+	witness.Public = publicWitness[0]
 	witness.SetStartingParameters()
 
 
-	for i := range publicWitness {
+	/*for i := range publicWitness {
 		if len(publicWitness[i].Public) != nbPublicVars-1 {
 			return fmt.Errorf("invalid witness size, got %d, expected %d (public - ONE_WIRE)", len(publicWitness[i].Public), len(vk.G1.K)-1)
 		}
-	}
+	}*/
 	log := logger.Logger().With().Str("curve", vk.CurveID().String()).Str("backend", "groth16").Logger()
 	start := time.Now()
 
@@ -168,7 +168,7 @@ func VerifyFolded(proof *Proof, vk *VerifyingKey, publicWitness ...fr.Vector) er
 	var doubleML curve.GT
 	chDone := make(chan error, 1)
 
-	foldedProof, foldingParameters, err := FoldProofs(proof, proof, vk, vk, publicWitness, publicWitness)
+	foldedProof, foldingParameters, err := FoldProofs(proof, proof, vk, vk, witness, witness)
 	if err != nil {
 		return err
 	}
@@ -182,7 +182,7 @@ func VerifyFolded(proof *Proof, vk *VerifyingKey, publicWitness ...fr.Vector) er
 		return err
 	}
 
-	foldedWitness.foldWitnesses(publicWitness, []FoldingParameters{*foldingParameters}, *vk, []Proof{*proof, *proof})
+	foldedWitness.foldWitnesses([]PublicWitness{witness, witness}, []FoldingParameters{*foldingParameters, *foldingParameters}, *vk, []Proof{*proof, *proof})
 
 	// compute (eKrsδ, eArBs, ealphaBeta)
 	go func() {
