@@ -389,6 +389,7 @@ func (foldedWitness *FoldedWitness) foldWitnesses(publicWitness []PublicWitness,
 
 		var kSum curve.G1Jac
 		if _, err := kSum.MultiExp(vk.G1.K[1:], publicWitness[i].Public, ecc.MultiExpConfig{}); err != nil {
+			fmt.Println(err)
 			return err
 		}
 		kSum.AddMixed(&vk.G1.K[0])
