@@ -25,6 +25,7 @@ import (
 	"github.com/consensys/gnark-crypto/ecc/bls12-377/fr/fft"
 	"github.com/consensys/gnark-crypto/ecc/bls12-377/fr/pedersen"
 	"github.com/consensys/gnark-crypto/utils"
+	"github.com/consensys/gnark-crypto/ecc/bls12-377/fr/hash_to_field"
 	"github.com/consensys/gnark/backend/groth16/internal"
 	"github.com/consensys/gnark/backend"
 	"github.com/consensys/gnark/constraint"
@@ -382,6 +383,9 @@ func (foldedWitness *FoldedWitness) foldWitnesses(publicWitness []PublicWitness,
 	opt, err := backend.NewVerifierConfig(opts...)
 	if err != nil {
 		return fmt.Errorf("new verifier config: %w", err)
+	}
+	if opt.HashToFieldFn == nil {
+		opt.HashToFieldFn = hash_to_field.New([]byte(constraint.CommitmentDst))
 	}
 	for i := range publicWitness {
 		fmt.Println("Folding Parameters: ", foldingParameters[i].R)
