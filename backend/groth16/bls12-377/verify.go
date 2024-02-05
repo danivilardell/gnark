@@ -227,12 +227,12 @@ func GetFoldingParameters(proof1, proof2 *Proof, vk *VerifyingKey, publicWitness
 	fmt.Println("eArBs")
 	A1B2, err := curve.Pair([]curve.G1Affine{proof1.Ar}, []curve.G2Affine{proof2.Bs})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	fmt.Println("eArBs2")
 	A2B1, err := curve.Pair([]curve.G1Affine{proof2.Ar}, []curve.G2Affine{proof1.Bs})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	C1C2 := make([]curve.G1Affine, 1)[0].Add(
 		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&proof2.Krs, &publicWitness1.mu),
@@ -241,7 +241,7 @@ func GetFoldingParameters(proof1, proof2 *Proof, vk *VerifyingKey, publicWitness
 	fmt.Println("eC1C2")
 	C1C2d, err := curve.Pair([]curve.G1Affine{*C1C2}, []curve.G2Affine{vk.G2.deltaNeg})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	maxNbPublicCommitted := 0
