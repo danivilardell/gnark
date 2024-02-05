@@ -151,7 +151,6 @@ func VerifyFolded(proof *Proof, vk *VerifyingKey, publicWitness ...fr.Vector) er
 	witness.Public = publicWitness[0]
 	witness.SetStartingParameters()
 
-
 	/*for i := range publicWitness {
 		if len(publicWitness[i].Public) != nbPublicVars-1 {
 			return fmt.Errorf("invalid witness size, got %d, expected %d (public - ONE_WIRE)", len(publicWitness[i].Public), len(vk.G1.K)-1)
@@ -280,7 +279,7 @@ func (vk *VerifyingKey) ExportSolidity(w io.Writer) error {
 	return errors.New("not implemented")
 }
 
-func FoldProofs(proof1, proof2 *Proof, vk1, vk2 *VerifyingKey, publicWitness1, publicWitness2 PublicWitness, opts ...backend.VerifierOption) (*FoldedProof, *FoldingParameters, error) {
+func FoldProofs(proof1, proof2 *Proof, vk1, vk2 *VerifyingKey, publicWitness1, publicWitness2 PublicWitness) (*FoldedProof, *FoldingParameters, error) {
 	fmt.Println("eArBs")
 	A1B2, err := curve.Pair([]curve.G1Affine{proof1.Ar}, []curve.G2Affine{proof2.Bs})
 	if err != nil {
@@ -302,6 +301,8 @@ func FoldProofs(proof1, proof2 *Proof, vk1, vk2 *VerifyingKey, publicWitness1, p
 	}
 
 	fmt.Println("eKrsδ1")
+	fmt.Println(len(vk1.G1.K[1:]))
+	fmt.Println(len(publicWitness1.Public))
 	var kSum1 curve.G1Jac
 	if _, err := kSum1.MultiExp(vk1.G1.K[1:], publicWitness1.Public, ecc.MultiExpConfig{}); err != nil {
 		return nil, nil, err
