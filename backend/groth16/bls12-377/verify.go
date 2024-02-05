@@ -143,7 +143,7 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 }
 
 // Verify verifies a proof with given VerifyingKey and publicWitness
-func VerifyFolded(proof *Proof, vk *VerifyingKey, publicWitness ...fr.Vector) error {
+func VerifyFolded(foldedProof *FoldedProof, foldingParameters FoldingParameters, vk *VerifyingKey, proofs []Proof ,publicWitness ...fr.Vector) error {
 
 	witness := PublicWitness{}
 	witness.Public = publicWitness[0]
@@ -152,10 +152,6 @@ func VerifyFolded(proof *Proof, vk *VerifyingKey, publicWitness ...fr.Vector) er
 	log := logger.Logger().With().Str("curve", vk.CurveID().String()).Str("backend", "groth16").Logger()
 	start := time.Now()
 	fmt.Println("checking proof validity")
-	// check that the points in the proof are in the correct subgroup
-	if !proof.isValid() {
-		return errCorrectSubgroupCheckFailed
-	}
 
 	var doubleML curve.GT
 	chDone := make(chan error, 1)
@@ -163,40 +159,30 @@ func VerifyFolded(proof *Proof, vk *VerifyingKey, publicWitness ...fr.Vector) er
 	startingFoldingPars := FoldingParameters{}
 	startingFoldingPars.R = *big.NewInt(1)
 	startingFoldingPars.T = *make([]curve.GT, 1)[0].SetOne()
-	foldedProof, foldingParameters, err := FoldProofs(proof, proof, vk, witness, witness)
-	if err != nil {
-		return err
-	}
 
-	fmt.Println("preparing witnesses")
 	// fold public witness
 	foldedWitness := FoldedWitness{}
 	foldedWitness.mu = *big.NewInt(0)
 	foldedWitness.H = *make([]curve.G1Affine, 1)[0].ScalarMultiplication(&make([]curve.G1Affine, 1)[0], big.NewInt(0))
+	var err error
 	foldedWitness.E, err = curve.Pair([]curve.G1Affine{*make([]curve.G1Affine, 1)[0].ScalarMultiplication(&make([]curve.G1Affine, 1)[0], big.NewInt(0))}, make([]curve.G2Affine, 1))
 	if err != nil {
 		return err
 	}
-	fmt.Println("folding witnesses")
-	fmt.Println("foldWitnesses1: ", foldedWitness.mu, foldedWitness.H, foldedWitness.E)
-	err = foldedWitness.foldWitnesses([]PublicWitness{witness, witness}, []FoldingParameters{startingFoldingPars, *foldingParameters}, *vk, []Proof{*proof, *proof})
+	err = foldedWitness.foldWitnesses([]PublicWitness{witness, witness}, []FoldingParameters{startingFoldingPars, foldingParameters}, *vk, []Proof{proofs[0], proofs[1]})
 	if err != nil {
 		return err
 	}
-	fmt.Println("foldWitnesses2: ", foldedWitness.mu, foldedWitness.H, foldedWitness.E)
 
 	// compute (eKrsδ, eArBs, ealphaBeta)
 	go func() {
-		fmt.Println("computing eKrsδ, eArBs")
 		var errML error
-		fmt.Println("mu: ", foldedWitness.mu)
 		krs_times_mu := make([]curve.G1Affine, 1)[0].ScalarMultiplication(&foldedProof.Krs, &foldedWitness.mu)
 		doubleML, errML = curve.MillerLoop([]curve.G1Affine{*krs_times_mu, foldedProof.Ar}, []curve.G2Affine{vk.G2.deltaNeg, foldedProof.Bs})
 		chDone <- errML
 		close(chDone)
 	}()
 
-	fmt.Println("computing e(Σx.[Kvk(t)]1, -[γ]2)")
 	gamma_neg_times_mu := make([]curve.G2Affine, 1)[0].ScalarMultiplication(&vk.G2.gammaNeg, &foldedWitness.mu)
 	right, err := curve.MillerLoop([]curve.G1Affine{foldedWitness.H}, []curve.G2Affine{*gamma_neg_times_mu})
 	if err != nil {
@@ -230,10 +216,10 @@ func (vk *VerifyingKey) ExportSolidity(w io.Writer) error {
 	return errors.New("not implemented")
 }
 
-func FoldProofs(proof1, proof2 *Proof, vk *VerifyingKey, publicWitness1, publicWitness2 PublicWitness, opts ...backend.VerifierOption) (*FoldedProof, *FoldingParameters, error) {
+func GetFoldingParameters(proof1, proof2 *Proof, vk *VerifyingKey, publicWitness1, publicWitness2 PublicWitness, opts ...backend.VerifierOption) (*FoldingParameters, error) {
 	opt, err := backend.NewVerifierConfig(opts...)
 	if err != nil {
-		return nil, nil, fmt.Errorf("new verifier config: %w", err)
+		return nil, fmt.Errorf("new verifier config: %w", err)
 	}
 	if opt.HashToFieldFn == nil {
 		opt.HashToFieldFn = hash_to_field.New([]byte(constraint.CommitmentDst))
@@ -295,7 +281,7 @@ func FoldProofs(proof1, proof2 *Proof, vk *VerifyingKey, publicWitness1, publicW
 	fmt.Println(len(publicWitness1.Public))
 	var kSum1 curve.G1Jac
 	if _, err := kSum1.MultiExp(vk.G1.K[1:], publicWitness1.Public, ecc.MultiExpConfig{}); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	kSum1.AddMixed(&vk.G1.K[0])
 	for i := range proof1.Commitments {
@@ -307,7 +293,7 @@ func FoldProofs(proof1, proof2 *Proof, vk *VerifyingKey, publicWitness1, publicW
 	fmt.Println("eKrsδ2")
 	var kSum2 curve.G1Jac
 	if _, err := kSum2.MultiExp(vk.G1.K[1:], publicWitness2.Public, ecc.MultiExpConfig{}); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	kSum2.AddMixed(&vk.G1.K[0])
 	for i := range proof2.Commitments {
@@ -332,15 +318,29 @@ func FoldProofs(proof1, proof2 *Proof, vk *VerifyingKey, publicWitness1, publicW
 
 	r := big.NewInt(12345)				// THIS SHOULD BE RANDOM!!! Fiat shamir?
 	
+	foldingPars := &FoldingParameters{}
+	foldingPars.T = *T
+	foldingPars.R = *r
+
+	return foldingPars, nil
+}
+
+func FoldProofs(proof1 *FoldedProof, proof2 *Proof, vk *VerifyingKey, opts ...backend.VerifierOption) (*FoldedProof, error) {
+	r := big.NewInt(12345)				// THIS SHOULD BE RANDOM!!! Fiat shamir?
+	
 	//Compute the updated proof
 	foldedProof := &FoldedProof{}
 	foldedProof.Ar = *make([]curve.G1Affine, 1)[0].Add(&proof1.Ar, make([]curve.G1Affine, 1)[0].ScalarMultiplication(&proof2.Ar, r))
 	foldedProof.Bs = *make([]curve.G2Affine, 1)[0].Add(&proof1.Bs, make([]curve.G2Affine, 1)[0].ScalarMultiplication(&proof2.Bs, r))
 	foldedProof.Krs = *make([]curve.G1Affine, 1)[0].Add(&proof1.Krs, make([]curve.G1Affine, 1)[0].ScalarMultiplication(&proof2.Krs, r))
 
-	foldingPars := &FoldingParameters{}
-	foldingPars.T = *T
-	foldingPars.R = *r
+	return foldedProof, nil
+}
 
-	return foldedProof, foldingPars, nil
+func getInitialFoldProof(proof *Proof) *FoldedProof {
+	foldedProof := &FoldedProof{}
+	foldedProof.Ar = proof.Ar
+	foldedProof.Bs = proof.Bs
+	foldedProof.Krs = proof.Krs
+	return foldedProof
 }

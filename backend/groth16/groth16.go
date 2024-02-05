@@ -20,7 +20,6 @@
 package groth16
 
 import (
-	"fmt"
 	"io"
 
 	"github.com/consensys/gnark-crypto/ecc"
@@ -161,15 +160,25 @@ func Verify(proof Proof, vk VerifyingKey, publicWitness witness.Witness, opts ..
 	}
 }
 
-func VerifyFolded(proof Proof, vk VerifyingKey, publicWitness witness.Witness) error {
-	switch _proof := proof.(type) {
-	case *groth16_bls12377.Proof:
-		witness, _ := publicWitness.Vector().(fr_bls12377.Vector)
-		fmt.Println(len(witness))
-		return groth16_bls12377.VerifyFolded(_proof, vk.(*groth16_bls12377.VerifyingKey), witness, witness)
-	default:
-		panic("unrecognized R1CS curve type")
+func VerifyFolded(proof cs_bls12377.FoldedProof, vk VerifyingKey, publicWitness []witness.Witness) error {
+	witness, _ := publicWitness.Vector().(fr_bls12377.Vector)
+	return groth16_bls12377.VerifyFolded(proof, vk.(*groth16_bls12377.VerifyingKey), publicWitness)
+}
+
+func FoldProofs(proofs []Proof, vk VerifyingKey) (cs_bls12377.FoldedProof, error) {
+	foldedProof := cs_bls12377.getInitialFoldProof(proofs[0])
+	for i, _ := range proofs {
+		switch _proof := proofs[i].(type) {
+		case *groth16_bls12377.Proof:
+			if i == 0 {
+				continue
+			}
+			groth16_bls12377.FoldProofs(foldedProof, _proof, vk.(*groth16_bls12377.VerifyingKey))
+		default:
+			panic("unrecognized R1CS curve type")
+		}
 	}
+	return foldedProof, nil
 }
 
 // Prove runs the groth16.Prove algorithm.

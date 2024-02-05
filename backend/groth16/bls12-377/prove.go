@@ -50,8 +50,8 @@ type Proof struct {
 }
 
 type FoldedProof struct {
-	Ar, Krs	   curve.G1Affine
-	Bs		   curve.G2Affine
+	Ar, Krs curve.G1Affine
+	Bs      curve.G2Affine
 }
 
 // isValid ensures proof elements are in the correct subgroup

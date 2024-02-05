@@ -388,8 +388,6 @@ func (foldedWitness *FoldedWitness) foldWitnesses(publicWitness []PublicWitness,
 		opt.HashToFieldFn = hash_to_field.New([]byte(constraint.CommitmentDst))
 	}
 	for i := range publicWitness {
-		fmt.Println("Folding Parameters: ", foldingParameters[i].R)
-		fmt.Println("Public Witness: ", publicWitness[i].mu)
 		foldedWitness.mu.Add(&foldedWitness.mu, big.NewInt(0).Mul(&publicWitness[i].mu, &foldingParameters[i].R))
 		rr := big.NewInt(0).Mul(&foldingParameters[i].R, &foldingParameters[i].R)
 		foldedWitness.E.Mul(&foldedWitness.E, make([]curve.GT, 1)[0].Mul(
@@ -422,7 +420,6 @@ func (foldedWitness *FoldedWitness) foldWitnesses(publicWitness []PublicWitness,
 
 		var kSum curve.G1Jac
 		if _, err := kSum.MultiExp(vk.G1.K[1:], publicWitness[i].Public, ecc.MultiExpConfig{}); err != nil {
-			fmt.Println(len(vk.G1.K[1:]), len(publicWitness[i].Public))
 			return err
 		}
 		kSum.AddMixed(&vk.G1.K[0])
