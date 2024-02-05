@@ -184,6 +184,7 @@ func VerifyFolded(proof *Proof, vk *VerifyingKey, publicWitness ...fr.Vector) er
 	go func() {
 		fmt.Println("computing eKrsδ, eArBs")
 		var errML error
+		fmt.Println("mu: ", foldedWitness.mu)
 		krs_times_mu := make([]curve.G1Affine, 1)[0].ScalarMultiplication(&foldedProof.Krs, &foldedWitness.mu)
 		doubleML, errML = curve.MillerLoop([]curve.G1Affine{*krs_times_mu, foldedProof.Ar}, []curve.G2Affine{vk.G2.deltaNeg, foldedProof.Bs})
 		chDone <- errML
