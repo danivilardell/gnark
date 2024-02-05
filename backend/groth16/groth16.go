@@ -68,6 +68,9 @@ type Proof interface {
 	groth16Object
 }
 
+type FoldedProof interface {
+}
+
 // ProvingKey represents a Groth16 ProvingKey
 //
 // it's underlying implementation is strongly typed with the curve (see gnark/internal/backend)
@@ -161,7 +164,6 @@ func Verify(proof Proof, vk VerifyingKey, publicWitness witness.Witness, opts ..
 }
 
 func VerifyFolded(proof cs_bls12377.FoldedProof, vk VerifyingKey, publicWitness []witness.Witness) error {
-	witness, _ := publicWitness.Vector().(fr_bls12377.Vector)
 	return groth16_bls12377.VerifyFolded(proof, vk.(*groth16_bls12377.VerifyingKey), publicWitness)
 }
 
