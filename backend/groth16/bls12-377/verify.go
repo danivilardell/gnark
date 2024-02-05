@@ -159,7 +159,7 @@ func VerifyFolded(proof *Proof, vk *VerifyingKey, publicWitness ...fr.Vector) er
 	}*/
 	log := logger.Logger().With().Str("curve", vk.CurveID().String()).Str("backend", "groth16").Logger()
 	start := time.Now()
-
+	fmt.Println("checking proof validity")
 	// check that the points in the proof are in the correct subgroup
 	if !proof.isValid() {
 		return errCorrectSubgroupCheckFailed
@@ -167,12 +167,13 @@ func VerifyFolded(proof *Proof, vk *VerifyingKey, publicWitness ...fr.Vector) er
 
 	var doubleML curve.GT
 	chDone := make(chan error, 1)
-
+	fmt.Println("Folding proofs")
 	foldedProof, foldingParameters, err := FoldProofs(proof, proof, vk, vk, witness, witness)
 	if err != nil {
 		return err
 	}
 
+	fmt.Println("preparing witnesses")
 	// fold public witness
 	foldedWitness := FoldedWitness{}
 	foldedWitness.mu = *big.NewInt(0)
@@ -181,11 +182,12 @@ func VerifyFolded(proof *Proof, vk *VerifyingKey, publicWitness ...fr.Vector) er
 	if err != nil {
 		return err
 	}
-
+	fmt.Println("folding witnesses")
 	foldedWitness.foldWitnesses([]PublicWitness{witness, witness}, []FoldingParameters{*foldingParameters, *foldingParameters}, *vk, []Proof{*proof, *proof})
 
 	// compute (eKrsδ, eArBs, ealphaBeta)
 	go func() {
+		fmt.Println("computing eKrsδ, eArBs")
 		var errML error
 		krs_times_mu := make([]curve.G1Affine, 1)[0].ScalarMultiplication(&foldedProof.Krs, &foldedWitness.mu)
 		doubleML, errML = curve.MillerLoop([]curve.G1Affine{*krs_times_mu, foldedProof.Ar}, []curve.G2Affine{vk.G2.deltaNeg, foldedProof.Bs})
@@ -244,6 +246,7 @@ func VerifyFolded(proof *Proof, vk *VerifyingKey, publicWitness ...fr.Vector) er
 	var kSumAff curve.G1Affine
 	kSumAff.FromJacobian(&kSum)*/
 
+	fmt.Println("computing e(Σx.[Kvk(t)]1, -[γ]2)")
 	gamma_neg_times_mu := make([]curve.G2Affine, 1)[0].ScalarMultiplication(&vk.G2.gammaNeg, &foldedWitness.mu)
 	right, err := curve.MillerLoop([]curve.G1Affine{foldedWitness.H}, []curve.G2Affine{*gamma_neg_times_mu})
 	if err != nil {
