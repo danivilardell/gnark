@@ -18,6 +18,7 @@ package groth16
 
 import (
 	"errors"
+	"fmt"
 	"github.com/consensys/gnark-crypto/ecc"
 	curve "github.com/consensys/gnark-crypto/ecc/bls12-377"
 	"github.com/consensys/gnark-crypto/ecc/bls12-377/fr"
@@ -377,6 +378,8 @@ func (vk *VerifyingKey) Precompute() error {
 
 func (foldedWitness *FoldedWitness) foldWitnesses(publicWitness []PublicWitness, foldingParameters []FoldingParameters, vk VerifyingKey, proofs []Proof) error {
 	for i := range publicWitness {
+		fmt.Println("Folding Parameters: ", foldingParameters[i].R)
+		fmt.Println("Public Witness: ", publicWitness[i].mu)
 		foldedWitness.mu.Add(&foldedWitness.mu, big.NewInt(0).Mul(&publicWitness[i].mu, &foldingParameters[i].R))
 		rr := big.NewInt(0).Mul(&foldingParameters[i].R, &foldingParameters[i].R)
 		foldedWitness.E.Mul(&foldedWitness.E, make([]curve.GT, 1)[0].Mul(
