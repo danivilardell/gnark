@@ -48,7 +48,7 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 	if opt.HashToFieldFn == nil {
 		opt.HashToFieldFn = hash_to_field.New([]byte(constraint.CommitmentDst))
 	}
-
+	fmt.Println(len(vk.G1.K))
 	nbPublicVars := len(vk.G1.K) - len(vk.PublicAndCommitmentCommitted)
 
 	if len(publicWitness) != nbPublicVars-1 {
