@@ -164,7 +164,13 @@ func VerifyFolded(proof Proof, vk VerifyingKey, publicWitness []witness.Witness,
 	switch _proof := proof.(type) {
 	case *groth16_bls12377.Proof:
 		witness1, ok := publicWitness[0].Vector().(fr_bls12377.Vector)
+		if !ok {
+			return witness.ErrInvalidWitness
+		}
 		witness2, ok := publicWitness[1].Vector().(fr_bls12377.Vector)
+		if !ok {
+			return witness.ErrInvalidWitness
+		}
 		return groth16_bls12377.VerifyFolded(_proof, vk.(*groth16_bls12377.VerifyingKey), witness1, witness2)
 	default:
 		panic("unrecognized R1CS curve type")
