@@ -167,7 +167,7 @@ func VerifyFolded(proof *Proof, vk *VerifyingKey, publicWitness ...fr.Vector) er
 	var doubleML curve.GT
 	chDone := make(chan error, 1)
 	fmt.Println("Folding proofs")
-	foldedProof, foldingParameters, err := FoldProofs(proof, proof, vk, vk, witness, witness)
+	foldedProof, foldingParameters, err := FoldProofs(proof, proof, vk, witness, witness)
 	if err != nil {
 		return err
 	}
@@ -279,7 +279,14 @@ func (vk *VerifyingKey) ExportSolidity(w io.Writer) error {
 	return errors.New("not implemented")
 }
 
-func FoldProofs(proof1, proof2 *Proof, vk1, vk2 *VerifyingKey, publicWitness1, publicWitness2 PublicWitness) (*FoldedProof, *FoldingParameters, error) {
+func FoldProofs(proof1, proof2 *Proof, vk *VerifyingKey, publicWitness1, publicWitness2 PublicWitness, opts ...backend.VerifierOption) (*FoldedProof, *FoldingParameters, error) {
+	opt, err := backend.NewVerifierConfig(opts...)
+	if err != nil {
+		return nil, nil, fmt.Errorf("new verifier config: %w", err)
+	}
+	if opt.HashToFieldFn == nil {
+		opt.HashToFieldFn = hash_to_field.New([]byte(constraint.CommitmentDst))
+	}
 	fmt.Println("eArBs")
 	A1B2, err := curve.Pair([]curve.G1Affine{proof1.Ar}, []curve.G2Affine{proof2.Bs})
 	if err != nil {
@@ -295,19 +302,51 @@ func FoldProofs(proof1, proof2 *Proof, vk1, vk2 *VerifyingKey, publicWitness1, p
 		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&proof1.Krs, &publicWitness2.mu),
 	)
 	fmt.Println("eC1C2")
-	C1C2d, err := curve.Pair([]curve.G1Affine{*C1C2}, []curve.G2Affine{vk1.G2.deltaNeg})
+	C1C2d, err := curve.Pair([]curve.G1Affine{*C1C2}, []curve.G2Affine{vk.G2.deltaNeg})
 	if err != nil {
 		return nil, nil, err
 	}
 
+	maxNbPublicCommitted := 0
+	for _, s := range vk.PublicAndCommitmentCommitted { // iterate over commitments
+		maxNbPublicCommitted = utils.Max(maxNbPublicCommitted, len(s))
+	}
+	commitmentPrehashSerialized1 := make([]byte, curve.SizeOfG1AffineUncompressed+maxNbPublicCommitted*fr.Bytes)
+	commitmentPrehashSerialized2 := make([]byte, curve.SizeOfG1AffineUncompressed+maxNbPublicCommitted*fr.Bytes)
+	for i := range vk.PublicAndCommitmentCommitted { // solveCommitmentWire
+		copy(commitmentPrehashSerialized1, proof1.Commitments[i].Marshal())
+		copy(commitmentPrehashSerialized2, proof2.Commitments[i].Marshal())
+		offset := curve.SizeOfG1AffineUncompressed
+		for j := range vk.PublicAndCommitmentCommitted[i] {
+			copy(commitmentPrehashSerialized1[offset:], publicWitness1.Public[vk.PublicAndCommitmentCommitted[i][j]-1].Marshal())
+			copy(commitmentPrehashSerialized2[offset:], publicWitness2.Public[vk.PublicAndCommitmentCommitted[i][j]-1].Marshal())
+			offset += fr.Bytes
+		}
+		opt.HashToFieldFn.Write(commitmentPrehashSerialized1[:offset])
+		hashBts1 := opt.HashToFieldFn.Sum(nil)
+		opt.HashToFieldFn.Reset()
+		opt.HashToFieldFn.Write(commitmentPrehashSerialized2[:offset])
+		hashBts2 := opt.HashToFieldFn.Sum(nil)
+		opt.HashToFieldFn.Reset()
+		nbBuf := fr.Bytes
+		if opt.HashToFieldFn.Size() < fr.Bytes {
+			nbBuf = opt.HashToFieldFn.Size()
+		}
+		var res1, res2 fr.Element
+		res1.SetBytes(hashBts1[:nbBuf])
+		res2.SetBytes(hashBts2[:nbBuf])
+		publicWitness1.Public = append(publicWitness1.Public, res1)
+		publicWitness2.Public = append(publicWitness2.Public, res2)
+	}
+
 	fmt.Println("eKrsδ1")
-	fmt.Println(len(vk1.G1.K[1:]))
+	fmt.Println(len(vk.G1.K[1:]))
 	fmt.Println(len(publicWitness1.Public))
 	var kSum1 curve.G1Jac
-	if _, err := kSum1.MultiExp(vk1.G1.K[1:], publicWitness1.Public, ecc.MultiExpConfig{}); err != nil {
+	if _, err := kSum1.MultiExp(vk.G1.K[1:], publicWitness1.Public, ecc.MultiExpConfig{}); err != nil {
 		return nil, nil, err
 	}
-	kSum1.AddMixed(&vk1.G1.K[0])
+	kSum1.AddMixed(&vk.G1.K[0])
 	for i := range proof1.Commitments {
 		kSum1.AddMixed(&proof1.Commitments[i])
 	}
@@ -316,10 +355,10 @@ func FoldProofs(proof1, proof2 *Proof, vk1, vk2 *VerifyingKey, publicWitness1, p
 
 	fmt.Println("eKrsδ2")
 	var kSum2 curve.G1Jac
-	if _, err := kSum2.MultiExp(vk2.G1.K[1:], publicWitness2.Public, ecc.MultiExpConfig{}); err != nil {
+	if _, err := kSum2.MultiExp(vk.G1.K[1:], publicWitness2.Public, ecc.MultiExpConfig{}); err != nil {
 		return nil, nil, err
 	}
-	kSum2.AddMixed(&vk2.G1.K[0])
+	kSum2.AddMixed(&vk.G1.K[0])
 	for i := range proof2.Commitments {
 		kSum2.AddMixed(&proof2.Commitments[i])
 	}
@@ -330,10 +369,10 @@ func FoldProofs(proof1, proof2 *Proof, vk1, vk2 *VerifyingKey, publicWitness1, p
 		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&kSumAff1, &publicWitness1.mu),
 		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&kSumAff2, &publicWitness2.mu),
 	)
-	H1H2g, err := curve.Pair([]curve.G1Affine{*H1H2}, []curve.G2Affine{vk1.G2.gammaNeg})
+	H1H2g, err := curve.Pair([]curve.G1Affine{*H1H2}, []curve.G2Affine{vk.G2.gammaNeg})
 
 	mu1mu2 := new(big.Int).Mul(&publicWitness1.mu, new(big.Int).Mul(&publicWitness2.mu, big.NewInt(-2)))
-	emu1mu2 := make([]curve.GT, 1)[0].Exp(vk1.e, mu1mu2)
+	emu1mu2 := make([]curve.GT, 1)[0].Exp(vk.e, mu1mu2)
 
 	T := A1B2.Mul(&A1B2, make([]curve.GT, 1)[0].Mul(
 		&A2B1, make([]curve.GT, 1)[0].Mul(
