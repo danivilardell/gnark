@@ -369,7 +369,7 @@ func (vk *VerifyingKey) Precompute() error {
 	if err != nil {
 		return err
 	}
-	
+
 	vk.G2.deltaNeg.Neg(&vk.G2.Delta)
 	vk.G2.gammaNeg.Neg(&vk.G2.Gamma)
 	return nil
@@ -379,7 +379,7 @@ func (foldedWitness *FoldedWitness) foldWitnesses(publicWitness []PublicWitness,
 	for i := range publicWitness {
 		foldedWitness.mu.Add(&foldedWitness.mu, big.NewInt(0).Mul(&publicWitness[i].mu, &foldingParameters[i].R))
 		rr := big.NewInt(0).Mul(&foldingParameters[i].R, &foldingParameters[i].R)
-		foldedWitness.E.Add(&foldedWitness.E, make([]curve.GT, 1)[0].Add(
+		foldedWitness.E.Mul(&foldedWitness.E, make([]curve.GT, 1)[0].Mul(
 			make([]curve.GT, 1)[0].Exp(foldingParameters[i].T, &foldingParameters[i].R), 
 			make([]curve.GT, 1)[0].Exp(publicWitness[i].E, rr),
 		))
