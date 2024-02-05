@@ -402,6 +402,7 @@ func (foldedWitness *FoldedWitness) foldWitnesses(publicWitness []PublicWitness,
 		}
 		commitmentPrehashSerialized := make([]byte, curve.SizeOfG1AffineUncompressed+maxNbPublicCommitted*fr.Bytes)
 		for i := range vk.PublicAndCommitmentCommitted { // solveCommitmentWire
+			fmt.Println("I: ", i)
 			copy(commitmentPrehashSerialized, proofs[i].Commitments[i].Marshal())
 			offset := curve.SizeOfG1AffineUncompressed
 			for j := range vk.PublicAndCommitmentCommitted[i] {
