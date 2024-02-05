@@ -281,10 +281,12 @@ func (vk *VerifyingKey) ExportSolidity(w io.Writer) error {
 }
 
 func FoldProofs(proof1, proof2 *Proof, vk1, vk2 *VerifyingKey, publicWitness1, publicWitness2 PublicWitness, opts ...backend.VerifierOption) (*FoldedProof, *FoldingParameters, error) {
+	fmt.Println("eArBs")
 	A1B2, err := curve.Pair([]curve.G1Affine{proof1.Ar}, []curve.G2Affine{proof2.Bs})
 	if err != nil {
 		return nil, nil, err
 	}
+	fmt.Println("eArBs2")
 	A2B1, err := curve.Pair([]curve.G1Affine{proof2.Ar}, []curve.G2Affine{proof1.Bs})
 	if err != nil {
 		return nil, nil, err
@@ -293,11 +295,13 @@ func FoldProofs(proof1, proof2 *Proof, vk1, vk2 *VerifyingKey, publicWitness1, p
 		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&proof2.Krs, &publicWitness1.mu),
 		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&proof1.Krs, &publicWitness2.mu),
 	)
+	fmt.Println("eC1C2")
 	C1C2d, err := curve.Pair([]curve.G1Affine{*C1C2}, []curve.G2Affine{vk1.G2.deltaNeg})
 	if err != nil {
 		return nil, nil, err
 	}
 
+	fmt.Println("eKrsδ1")
 	var kSum1 curve.G1Jac
 	if _, err := kSum1.MultiExp(vk1.G1.K[1:], publicWitness1.Public, ecc.MultiExpConfig{}); err != nil {
 		return nil, nil, err
@@ -309,6 +313,7 @@ func FoldProofs(proof1, proof2 *Proof, vk1, vk2 *VerifyingKey, publicWitness1, p
 	var kSumAff1 curve.G1Affine
 	kSumAff1.FromJacobian(&kSum1)
 
+	fmt.Println("eKrsδ2")
 	var kSum2 curve.G1Jac
 	if _, err := kSum2.MultiExp(vk2.G1.K[1:], publicWitness2.Public, ecc.MultiExpConfig{}); err != nil {
 		return nil, nil, err
