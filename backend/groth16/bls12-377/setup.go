@@ -89,7 +89,7 @@ type VerifyingKey struct {
 }
 
 type PublicWitness struct {
-	Public 	[]fr.Element
+	Public 	[]fr.Vector
 	E 		curve.GT
 	mu 		big.Int
 }

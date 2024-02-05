@@ -143,9 +143,14 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 }
 
 // Verify verifies a proof with given VerifyingKey and publicWitness
-func VerifyFolded(proof *Proof, vk *VerifyingKey, publicWitness ...PublicWitness) error {
+func VerifyFolded(proof *Proof, vk *VerifyingKey, publicWitness ...fr.Vector) error {
 
 	nbPublicVars := len(vk.G1.K) - len(vk.PublicAndCommitmentCommitted)
+
+	witness := PublicWitness{}
+	witness.Public = publicWitness
+	witness.SetStartingParameters()
+
 
 	for i := range publicWitness {
 		if len(publicWitness[i].Public) != nbPublicVars-1 {
@@ -163,7 +168,7 @@ func VerifyFolded(proof *Proof, vk *VerifyingKey, publicWitness ...PublicWitness
 	var doubleML curve.GT
 	chDone := make(chan error, 1)
 
-	foldedProof, foldingParameters, err := FoldProofs(proof, proof, vk, vk, publicWitness[0], publicWitness[0])
+	foldedProof, foldingParameters, err := FoldProofs(proof, proof, vk, vk, publicWitness, publicWitness)
 	if err != nil {
 		return err
 	}
