@@ -163,8 +163,8 @@ func Verify(proof Proof, vk VerifyingKey, publicWitness witness.Witness, opts ..
 	}
 }
 
-func VerifyFolded(proof FoldedProof, vk VerifyingKey, publicWitness []witness.Witness) error {
-	return groth16_bls12377.VerifyFolded(proof, vk.(*groth16_bls12377.VerifyingKey), publicWitness)
+func VerifyFolded(proof FoldedProof, vk VerifyingKey, publicWitness []witness.Witness, proofs []Proof) error {
+	return groth16_bls12377.VerifyFolded(proof, vk.(*groth16_bls12377.VerifyingKey), publicWitness, proofs)
 }
 
 func FoldProofs(proofs []Proof, vk VerifyingKey) (FoldedProof, error) {
@@ -175,7 +175,7 @@ func FoldProofs(proofs []Proof, vk VerifyingKey) (FoldedProof, error) {
 			if i == 0 {
 				continue
 			}
-			groth16_bls12377.FoldProofs(foldedProof, _proof, vk.(*groth16_bls12377.VerifyingKey))
+			groth16_bls12377.FoldProof(foldedProof, _proof, vk.(*groth16_bls12377.VerifyingKey))
 		default:
 			panic("unrecognized R1CS curve type")
 		}

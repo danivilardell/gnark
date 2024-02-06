@@ -325,7 +325,7 @@ func GetFoldingParameters(proof1, proof2 *Proof, vk *VerifyingKey, publicWitness
 	return foldingPars, nil
 }
 
-func FoldProofs(proof1 *FoldedProof, proof2 *Proof, vk *VerifyingKey, opts ...backend.VerifierOption) (*FoldedProof, error) {
+func FoldProof(proof1 *FoldedProof, proof2 *Proof, vk *VerifyingKey, opts ...backend.VerifierOption) (*FoldedProof, error) {
 	r := big.NewInt(12345)				// THIS SHOULD BE RANDOM!!! Fiat shamir?
 	
 	//Compute the updated proof
