@@ -143,7 +143,7 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 }
 
 // Verify verifies a proof with given VerifyingKey and publicWitness
-func VerifyFolded(foldedProof *FoldedProof, foldingParameters *FoldingParameters, vk *VerifyingKey, proofs []Proof ,publicWitness ...fr.Vector) error {
+func VerifyFolded(foldedProof *FoldedProof, foldingParameters *FoldingParameters, vk *VerifyingKey, proofs []Proof ,publicWitness []fr.Vector) error {
 
 	witness := PublicWitness{}
 	witness.Public = publicWitness[0]

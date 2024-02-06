@@ -175,7 +175,7 @@ func VerifyFolded(proof FoldedProof, foldingParameters FoldingParameters, vk Ver
 	for i, w := range publicWitness {
 		witness_bls12377[i] = w.Vector().(fr_bls12377.Vector)
 	}
-	return groth16_bls12377.VerifyFolded(proof.(*groth16_bls12377.FoldedProof), foldingParameters.(*groth16_bls12377.FoldingParameters), vk.(*groth16_bls12377.VerifyingKey), witness_bls12377, proofs_bls12377)
+	return groth16_bls12377.VerifyFolded(proof.(*groth16_bls12377.FoldedProof), foldingParameters.(*groth16_bls12377.FoldingParameters), vk.(*groth16_bls12377.VerifyingKey), proofs_bls12377, witness_bls12377)
 }
 
 func FoldProofs(proofs []Proof, vk VerifyingKey) (FoldedProof, error) {
