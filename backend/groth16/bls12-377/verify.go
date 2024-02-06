@@ -303,6 +303,9 @@ func GetFoldingParameters(kSumAff1 curve.G1Affine, proof1 *FoldedProof, proof2 *
 
 func GetkSumAff(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...backend.VerifierOption) (curve.G1Affine, error) {
 	opt, _ := backend.NewVerifierConfig(opts...)
+	if opt.HashToFieldFn == nil {
+		opt.HashToFieldFn = hash_to_field.New([]byte(constraint.CommitmentDst))
+	}
 
 	witness := PublicWitness{}
 	witness.Public = publicWitness
@@ -311,15 +314,15 @@ func GetkSumAff(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ..
 	for _, s := range vk.PublicAndCommitmentCommitted { // iterate over commitments
 		maxNbPublicCommitted = utils.Max(maxNbPublicCommitted, len(s))
 	}
-	commitmentPrehashSerialized2 := make([]byte, curve.SizeOfG1AffineUncompressed+maxNbPublicCommitted*fr.Bytes)
+	commitmentPrehashSerialized := make([]byte, curve.SizeOfG1AffineUncompressed+maxNbPublicCommitted*fr.Bytes)
 	for i := range vk.PublicAndCommitmentCommitted { // solveCommitmentWire
-		copy(commitmentPrehashSerialized2, proof.Commitments[i].Marshal())
+		copy(commitmentPrehashSerialized, proof.Commitments[i].Marshal())
 		offset := curve.SizeOfG1AffineUncompressed
 		for j := range vk.PublicAndCommitmentCommitted[i] {
-			copy(commitmentPrehashSerialized2[offset:], witness.Public[vk.PublicAndCommitmentCommitted[i][j]-1].Marshal())
+			copy(commitmentPrehashSerialized[offset:], witness.Public[vk.PublicAndCommitmentCommitted[i][j]-1].Marshal())
 			offset += fr.Bytes
 		}
-		opt.HashToFieldFn.Write(commitmentPrehashSerialized2[:offset])
+		opt.HashToFieldFn.Write(commitmentPrehashSerialized[:offset])
 		hashBts2 := opt.HashToFieldFn.Sum(nil)
 		opt.HashToFieldFn.Reset()
 		nbBuf := fr.Bytes
