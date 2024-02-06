@@ -201,7 +201,7 @@ func FoldProofs(proofs []Proof, vk VerifyingKey, opts ...backend.ProverOption) (
 func GetFoldingParameters(proofs []Proof, vk VerifyingKey, publicWitness []witness.Witness, opts ...backend.ProverOption) ([]FoldingParameters, error) {
 	w1, _ := publicWitness[0].Vector().(fr_bls12377.Vector)
 	w2, _ := publicWitness[1].Vector().(fr_bls12377.Vector)
-	kSumAff := groth16_bls12377.getkSumAff(proofs[0].(*groth16_bls12377.Proof), vk.(*groth16_bls12377.VerifyingKey), w1, w2)
+	kSumAff := groth16_bls12377.getkSumAff(proofs[0].(*groth16_bls12377.Proof), vk.(*groth16_bls12377.VerifyingKey), w1)
 
 	foldedProof := &groth16_bls12377.FoldedProof{}
 	proof0 := proofs[0].(*groth16_bls12377.Proof)
@@ -219,7 +219,7 @@ func GetFoldingParameters(proofs []Proof, vk VerifyingKey, publicWitness []witne
 			w1, _ := publicWitness[i-1].Vector().(fr_bls12377.Vector)
 			w2, _ := publicWitness[i].Vector().(fr_bls12377.Vector)
 			var err error
-			foldingParameters[i-1], kSumAff, err = groth16_bls12377.GetFoldingParameters(kSumAff, foldedProof.(*groth16_bls12377.FoldedProof), proofs[i].(*groth16_bls12377.Proof), vk.(*groth16_bls12377.VerifyingKey), w1, w2)
+			foldingParameters[i-1], kSumAff, err = groth16_bls12377.GetFoldingParameters(kSumAff, foldedProof, proofs[i].(*groth16_bls12377.Proof), vk.(*groth16_bls12377.VerifyingKey), w1, w2)
 			if err != nil {
 				return nil, err
 			}
