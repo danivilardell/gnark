@@ -201,11 +201,34 @@ func FoldProofs(proofs []Proof, vk VerifyingKey, opts ...backend.ProverOption) (
 func GetFoldingParameters(proofs []Proof, vk VerifyingKey, publicWitness []witness.Witness, opts ...backend.ProverOption) ([]FoldingParameters, error) {
 	w1, _ := publicWitness[0].Vector().(fr_bls12377.Vector)
 	w2, _ := publicWitness[1].Vector().(fr_bls12377.Vector)
-	foldingParameters, err := groth16_bls12377.GetFoldingParameters(proofs[0].(*groth16_bls12377.Proof), proofs[1].(*groth16_bls12377.Proof), vk.(*groth16_bls12377.VerifyingKey), w1, w2)
-	if err != nil {
-		return nil, err
+	kSumAff := groth16_bls12377.getkSumAff(proofs[0].(*groth16_bls12377.Proof), vk.(*groth16_bls12377.VerifyingKey), w1, w2)
+
+	foldedProof := &groth16_bls12377.FoldedProof{}
+	proof0 := proofs[0].(*groth16_bls12377.Proof)
+	foldedProof.Ar = proof0.Ar
+	foldedProof.Bs = proof0.Bs
+	foldedProof.Krs = proof0.Krs
+
+	foldingParameters := make([]FoldingParameters, len(proofs)-1)
+	for i, _ := range proofs {
+		switch _proof := proofs[i].(type) {
+		case *groth16_bls12377.Proof:
+			if i == 0 {
+				continue
+			}
+			w1, _ := publicWitness[i-1].Vector().(fr_bls12377.Vector)
+			w2, _ := publicWitness[i].Vector().(fr_bls12377.Vector)
+			var err error
+			foldingParameters[i-1], kSumAff, err = groth16_bls12377.GetFoldingParameters(kSumAff, foldedProof.(*groth16_bls12377.FoldedProof), proofs[i].(*groth16_bls12377.Proof), vk.(*groth16_bls12377.VerifyingKey), w1, w2)
+			if err != nil {
+				return nil, err
+			}
+			foldedProof, _ = groth16_bls12377.FoldProof(foldedProof, _proof, vk.(*groth16_bls12377.VerifyingKey))
+		default:
+			panic("unrecognized R1CS curve type")
+		}
 	}
-	return []FoldingParameters{foldingParameters}, nil
+	return foldingParameters, nil
 }
 
 // Prove runs the groth16.Prove algorithm.

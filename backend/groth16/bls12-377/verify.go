@@ -211,7 +211,7 @@ func (vk *VerifyingKey) ExportSolidity(w io.Writer) error {
 	return errors.New("not implemented")
 }
 
-func GetFoldingParameters(proof1, proof2 *Proof, vk *VerifyingKey, publicWitness1, publicWitness2 fr.Vector, opts ...backend.VerifierOption) (*FoldingParameters, error) {
+func GetFoldingParameters(kSumAff1 curve.G1Affine, proof1 *FoldedProof, proof2 *Proof, vk *VerifyingKey, publicWitness1, publicWitness2 fr.Vector, opts ...backend.VerifierOption) (*FoldingParameters, curve.G1Affine, error) {
 	witness1 := PublicWitness{}
 	witness1.Public = publicWitness1
 	witness1.SetStartingParameters()
@@ -221,18 +221,18 @@ func GetFoldingParameters(proof1, proof2 *Proof, vk *VerifyingKey, publicWitness
 
 	opt, err := backend.NewVerifierConfig(opts...)
 	if err != nil {
-		return nil, fmt.Errorf("new verifier config: %w", err)
+		return nil, kSumAff1, fmt.Errorf("new verifier config: %w", err)
 	}
 	if opt.HashToFieldFn == nil {
 		opt.HashToFieldFn = hash_to_field.New([]byte(constraint.CommitmentDst))
 	}
 	A1B2, err := curve.Pair([]curve.G1Affine{proof1.Ar}, []curve.G2Affine{proof2.Bs})
 	if err != nil {
-		return nil, err
+		return nil, kSumAff1, err
 	}
 	A2B1, err := curve.Pair([]curve.G1Affine{proof2.Ar}, []curve.G2Affine{proof1.Bs})
 	if err != nil {
-		return nil, err
+		return nil, kSumAff1, err
 	}
 	C1C2 := make([]curve.G1Affine, 1)[0].Add(
 		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&proof2.Krs, &witness1.mu),
@@ -240,27 +240,21 @@ func GetFoldingParameters(proof1, proof2 *Proof, vk *VerifyingKey, publicWitness
 	)
 	C1C2d, err := curve.Pair([]curve.G1Affine{*C1C2}, []curve.G2Affine{vk.G2.deltaNeg})
 	if err != nil {
-		return nil, err
+		return nil, kSumAff1, err
 	}
 
 	maxNbPublicCommitted := 0
 	for _, s := range vk.PublicAndCommitmentCommitted { // iterate over commitments
 		maxNbPublicCommitted = utils.Max(maxNbPublicCommitted, len(s))
 	}
-	commitmentPrehashSerialized1 := make([]byte, curve.SizeOfG1AffineUncompressed+maxNbPublicCommitted*fr.Bytes)
 	commitmentPrehashSerialized2 := make([]byte, curve.SizeOfG1AffineUncompressed+maxNbPublicCommitted*fr.Bytes)
 	for i := range vk.PublicAndCommitmentCommitted { // solveCommitmentWire
-		copy(commitmentPrehashSerialized1, proof1.Commitments[i].Marshal())
 		copy(commitmentPrehashSerialized2, proof2.Commitments[i].Marshal())
 		offset := curve.SizeOfG1AffineUncompressed
 		for j := range vk.PublicAndCommitmentCommitted[i] {
-			copy(commitmentPrehashSerialized1[offset:], witness1.Public[vk.PublicAndCommitmentCommitted[i][j]-1].Marshal())
 			copy(commitmentPrehashSerialized2[offset:], witness2.Public[vk.PublicAndCommitmentCommitted[i][j]-1].Marshal())
 			offset += fr.Bytes
 		}
-		opt.HashToFieldFn.Write(commitmentPrehashSerialized1[:offset])
-		hashBts1 := opt.HashToFieldFn.Sum(nil)
-		opt.HashToFieldFn.Reset()
 		opt.HashToFieldFn.Write(commitmentPrehashSerialized2[:offset])
 		hashBts2 := opt.HashToFieldFn.Sum(nil)
 		opt.HashToFieldFn.Reset()
@@ -268,27 +262,14 @@ func GetFoldingParameters(proof1, proof2 *Proof, vk *VerifyingKey, publicWitness
 		if opt.HashToFieldFn.Size() < fr.Bytes {
 			nbBuf = opt.HashToFieldFn.Size()
 		}
-		var res1, res2 fr.Element
-		res1.SetBytes(hashBts1[:nbBuf])
+		var res2 fr.Element
 		res2.SetBytes(hashBts2[:nbBuf])
-		witness1.Public = append(witness1.Public, res1)
 		witness2.Public = append(witness2.Public, res2)
 	}
 
-	var kSum1 curve.G1Jac
-	if _, err := kSum1.MultiExp(vk.G1.K[1:], witness1.Public, ecc.MultiExpConfig{}); err != nil {
-		return nil, err
-	}
-	kSum1.AddMixed(&vk.G1.K[0])
-	for i := range proof1.Commitments {
-		kSum1.AddMixed(&proof1.Commitments[i])
-	}
-	var kSumAff1 curve.G1Affine
-	kSumAff1.FromJacobian(&kSum1)
-
 	var kSum2 curve.G1Jac
 	if _, err := kSum2.MultiExp(vk.G1.K[1:], witness2.Public, ecc.MultiExpConfig{}); err != nil {
-		return nil, err
+		return nil, kSumAff1, err
 	}
 	kSum2.AddMixed(&vk.G1.K[0])
 	for i := range proof2.Commitments {
@@ -317,7 +298,50 @@ func GetFoldingParameters(proof1, proof2 *Proof, vk *VerifyingKey, publicWitness
 	foldingPars.T = *T
 	foldingPars.R = *r
 	fmt.Println("folding_pars: ", foldingPars)
-	return foldingPars, nil
+	return foldingPars, kSumAff2, nil
+}
+
+func getkSumAff(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...backend.VerifierOption) (curve.G1Affine, error) {
+	opt, _ := backend.NewVerifierConfig(opts...)
+
+	witness := PublicWitness{}
+	witness.Public = publicWitness
+	witness.SetStartingParameters()
+	maxNbPublicCommitted := 0
+	for _, s := range vk.PublicAndCommitmentCommitted { // iterate over commitments
+		maxNbPublicCommitted = utils.Max(maxNbPublicCommitted, len(s))
+	}
+	commitmentPrehashSerialized2 := make([]byte, curve.SizeOfG1AffineUncompressed+maxNbPublicCommitted*fr.Bytes)
+	for i := range vk.PublicAndCommitmentCommitted { // solveCommitmentWire
+		copy(commitmentPrehashSerialized2, proof.Commitments[i].Marshal())
+		offset := curve.SizeOfG1AffineUncompressed
+		for j := range vk.PublicAndCommitmentCommitted[i] {
+			copy(commitmentPrehashSerialized2[offset:], witness.Public[vk.PublicAndCommitmentCommitted[i][j]-1].Marshal())
+			offset += fr.Bytes
+		}
+		opt.HashToFieldFn.Write(commitmentPrehashSerialized2[:offset])
+		hashBts2 := opt.HashToFieldFn.Sum(nil)
+		opt.HashToFieldFn.Reset()
+		nbBuf := fr.Bytes
+		if opt.HashToFieldFn.Size() < fr.Bytes {
+			nbBuf = opt.HashToFieldFn.Size()
+		}
+		var res2 fr.Element
+		res2.SetBytes(hashBts2[:nbBuf])
+		witness.Public = append(witness.Public, res2)
+	}
+
+	var kSum2 curve.G1Jac
+	if _, err := kSum2.MultiExp(vk.G1.K[1:], witness.Public, ecc.MultiExpConfig{}); err != nil {
+		return make([]curve.G1Affine, 1)[0], err
+	}
+	kSum2.AddMixed(&vk.G1.K[0])
+	for i := range proof.Commitments {
+		kSum2.AddMixed(&proof.Commitments[i])
+	}
+	var kSumAff curve.G1Affine
+	kSumAff.FromJacobian(&kSum2)
+	return kSumAff, nil
 }
 
 func FoldProof(proof1 *FoldedProof, proof2 *Proof, vk *VerifyingKey, opts ...backend.VerifierOption) (*FoldedProof, error) {
