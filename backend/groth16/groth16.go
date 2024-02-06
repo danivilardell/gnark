@@ -71,6 +71,9 @@ type Proof interface {
 type FoldedProof interface {
 }
 
+type FoldingParameters interface {
+}
+
 // ProvingKey represents a Groth16 ProvingKey
 //
 // it's underlying implementation is strongly typed with the curve (see gnark/internal/backend)
@@ -163,12 +166,12 @@ func Verify(proof Proof, vk VerifyingKey, publicWitness witness.Witness, opts ..
 	}
 }
 
-func VerifyFolded(proof FoldedProof, vk VerifyingKey, publicWitness []witness.Witness, proofs []Proof) error {
+func VerifyFolded(proof FoldedProof, foldingParameters FoldingParameters, vk VerifyingKey, publicWitness []witness.Witness, proofs []Proof) error {
 	proofs_bls12377 := make([]*groth16_bls12377.Proof, len(proofs))
 	for i, _proof := range proofs {
 		proofs_bls12377[i] = _proof.(*groth16_bls12377.Proof)
 	}
-	return groth16_bls12377.VerifyFolded(proof, vk.(*groth16_bls12377.VerifyingKey), publicWitness, proofs_bls12377)
+	return groth16_bls12377.VerifyFolded(proof.(groth16_bls12377.FoldedProof), foldingParameters.(*groth16_bls12377.FoldingParameters), vk.(*groth16_bls12377.VerifyingKey), publicWitness, proofs_bls12377)
 }
 
 func FoldProofs(proofs []Proof, vk VerifyingKey) (FoldedProof, error) {
