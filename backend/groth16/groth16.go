@@ -200,7 +200,10 @@ func FoldProofs(proofs []Proof, vk VerifyingKey, opts ...backend.ProverOption) (
 
 func GetFoldingParameters(proofs []Proof, vk VerifyingKey, publicWitness []witness.Witness, opts ...backend.ProverOption) ([]FoldingParameters, error) {
 	w1, _ := publicWitness[0].Vector().(fr_bls12377.Vector)
-	kSumAff := groth16_bls12377.GetkSumAff(proofs[0].(*groth16_bls12377.Proof), vk.(*groth16_bls12377.VerifyingKey), w1)
+	kSumAff, err := groth16_bls12377.GetkSumAff(proofs[0].(*groth16_bls12377.Proof), vk.(*groth16_bls12377.VerifyingKey), w1)
+	if err != nil {
+		return nil, err
+	}
 
 	foldedProof := &groth16_bls12377.FoldedProof{}
 	proof0 := proofs[0].(*groth16_bls12377.Proof)
