@@ -199,11 +199,13 @@ func FoldProofs(proofs []Proof, vk VerifyingKey, opts ...backend.ProverOption) (
 }
 
 func GetFoldingParameters(proofs []Proof, vk VerifyingKey, publicWitness []witness.Witness, opts ...backend.ProverOption) ([]FoldingParameters, error) {
-	foldingParameters, err := groth16_bls12377.GetFoldingParameters(proofs[0].(*groth16_bls12377.FoldedProof), proofs[1].(*groth16_bls12377.FoldedProof), vk.(*groth16_bls12377.VerifyingKey), publicWitness[0], publicWitness[1], opts...)
+	w1, ok := publicWitness[0].Vector().(fr_bls12377.Vector)
+	w2, ok := publicWitness[1].Vector().(fr_bls12377.Vector)
+	foldingParameters, err := groth16_bls12377.GetFoldingParameters(proofs[0].(*groth16_bls12377.Proof), proofs[1].(*groth16_bls12377.Proof), vk.(*groth16_bls12377.VerifyingKey), w1, w2)
 	if err != nil {
 		return nil, err
 	}
-	return foldingParameters, nil
+	return []FoldingParameters{foldingParameters}, nil
 }
 
 // Prove runs the groth16.Prove algorithm.
