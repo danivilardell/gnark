@@ -169,7 +169,7 @@ func Verify(proof Proof, vk VerifyingKey, publicWitness witness.Witness, opts ..
 func VerifyFolded(proof FoldedProof, foldingParameters FoldingParameters, vk VerifyingKey, publicWitness []witness.Witness, proofs []Proof) error {
 	proofs_bls12377 := make([]groth16_bls12377.Proof, len(proofs))
 	for i, _proof := range proofs {
-		proofs_bls12377[i] = _proof.(*groth16_bls12377.Proof)
+		proofs_bls12377[i] = *_proof.(*groth16_bls12377.Proof)
 	}
 	witness_bls12377 := make([]fr_bls12377.Vector, len(publicWitness))
 	for i, w := range publicWitness {
