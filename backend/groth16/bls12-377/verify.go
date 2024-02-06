@@ -48,7 +48,6 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 	if opt.HashToFieldFn == nil {
 		opt.HashToFieldFn = hash_to_field.New([]byte(constraint.CommitmentDst))
 	}
-	fmt.Println(len(vk.G1.K))
 	nbPublicVars := len(vk.G1.K) - len(vk.PublicAndCommitmentCommitted)
 
 	if len(publicWitness) != nbPublicVars-1 {
@@ -131,8 +130,6 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 		return err
 	}
 
-	fmt.Println("E", vk.e)
-	fmt.Println("right", right)
 	right = curve.FinalExponentiation(&right, &doubleML)
 	if !vk.e.Equal(&right) {
 		return errPairingCheckFailed
@@ -151,11 +148,9 @@ func VerifyFolded(foldedProof *FoldedProof, foldingParameters *FoldingParameters
 
 	log := logger.Logger().With().Str("curve", vk.CurveID().String()).Str("backend", "groth16").Logger()
 	start := time.Now()
-	fmt.Println("checking proof validity")
 
 	var doubleML curve.GT
 	chDone := make(chan error, 1)
-	fmt.Println("Folding proofs")
 	startingFoldingPars := FoldingParameters{}
 	startingFoldingPars.R = *big.NewInt(1)
 	startingFoldingPars.T = *make([]curve.GT, 1)[0].SetOne()
@@ -231,12 +226,10 @@ func GetFoldingParameters(proof1, proof2 *Proof, vk *VerifyingKey, publicWitness
 	if opt.HashToFieldFn == nil {
 		opt.HashToFieldFn = hash_to_field.New([]byte(constraint.CommitmentDst))
 	}
-	fmt.Println("eArBs")
 	A1B2, err := curve.Pair([]curve.G1Affine{proof1.Ar}, []curve.G2Affine{proof2.Bs})
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("eArBs2")
 	A2B1, err := curve.Pair([]curve.G1Affine{proof2.Ar}, []curve.G2Affine{proof1.Bs})
 	if err != nil {
 		return nil, err
@@ -245,7 +238,6 @@ func GetFoldingParameters(proof1, proof2 *Proof, vk *VerifyingKey, publicWitness
 		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&proof2.Krs, &witness1.mu),
 		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&proof1.Krs, &witness2.mu),
 	)
-	fmt.Println("eC1C2")
 	C1C2d, err := curve.Pair([]curve.G1Affine{*C1C2}, []curve.G2Affine{vk.G2.deltaNeg})
 	if err != nil {
 		return nil, err
@@ -283,9 +275,6 @@ func GetFoldingParameters(proof1, proof2 *Proof, vk *VerifyingKey, publicWitness
 		witness2.Public = append(witness2.Public, res2)
 	}
 
-	fmt.Println("eKrsδ1")
-	fmt.Println(len(vk.G1.K[1:]))
-	fmt.Println(len(witness1.Public))
 	var kSum1 curve.G1Jac
 	if _, err := kSum1.MultiExp(vk.G1.K[1:], witness1.Public, ecc.MultiExpConfig{}); err != nil {
 		return nil, err
@@ -297,7 +286,6 @@ func GetFoldingParameters(proof1, proof2 *Proof, vk *VerifyingKey, publicWitness
 	var kSumAff1 curve.G1Affine
 	kSumAff1.FromJacobian(&kSum1)
 
-	fmt.Println("eKrsδ2")
 	var kSum2 curve.G1Jac
 	if _, err := kSum2.MultiExp(vk.G1.K[1:], witness2.Public, ecc.MultiExpConfig{}); err != nil {
 		return nil, err
@@ -328,7 +316,7 @@ func GetFoldingParameters(proof1, proof2 *Proof, vk *VerifyingKey, publicWitness
 	foldingPars := &FoldingParameters{}
 	foldingPars.T = *T
 	foldingPars.R = *r
-
+	fmt.Println("folding_pars: ", foldingPars)
 	return foldingPars, nil
 }
 
