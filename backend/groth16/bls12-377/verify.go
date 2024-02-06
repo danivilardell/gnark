@@ -301,7 +301,7 @@ func GetFoldingParameters(kSumAff1 curve.G1Affine, proof1 *FoldedProof, proof2 *
 	return foldingPars, kSumAff2, nil
 }
 
-func getkSumAff(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...backend.VerifierOption) (curve.G1Affine, error) {
+func GetkSumAff(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...backend.VerifierOption) (curve.G1Affine, error) {
 	opt, _ := backend.NewVerifierConfig(opts...)
 
 	witness := PublicWitness{}
