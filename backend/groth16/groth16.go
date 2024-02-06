@@ -164,7 +164,11 @@ func Verify(proof Proof, vk VerifyingKey, publicWitness witness.Witness, opts ..
 }
 
 func VerifyFolded(proof FoldedProof, vk VerifyingKey, publicWitness []witness.Witness, proofs []Proof) error {
-	return groth16_bls12377.VerifyFolded(proof, vk.(*groth16_bls12377.VerifyingKey), publicWitness, proofs)
+	proofs_bls12377 := make([]*groth16_bls12377.Proof, len(proofs))
+	for i, _proof := range proofs {
+		proofs_bls12377[i] = _proof.(*groth16_bls12377.Proof)
+	}
+	return groth16_bls12377.VerifyFolded(proof, vk.(*groth16_bls12377.VerifyingKey), publicWitness, proofs_bls12377)
 }
 
 func FoldProofs(proofs []Proof, vk VerifyingKey) (FoldedProof, error) {
