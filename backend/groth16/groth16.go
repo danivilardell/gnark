@@ -190,7 +190,7 @@ func FoldProofs(proofs []Proof, vk VerifyingKey, opts ...backend.ProverOption) (
 			if i == 0 {
 				continue
 			}
-			groth16_bls12377.FoldProof(foldedProof, _proof, vk.(*groth16_bls12377.VerifyingKey))
+			foldedProof = groth16_bls12377.FoldProof(foldedProof, _proof, vk.(*groth16_bls12377.VerifyingKey))
 		default:
 			panic("unrecognized R1CS curve type")
 		}
