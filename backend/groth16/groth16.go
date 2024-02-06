@@ -163,12 +163,12 @@ func Verify(proof Proof, vk VerifyingKey, publicWitness witness.Witness, opts ..
 	}
 }
 
-func VerifyFolded(proof cs_bls12377.FoldedProof, vk VerifyingKey, publicWitness []witness.Witness) error {
+func VerifyFolded(proof FoldedProof, vk VerifyingKey, publicWitness []witness.Witness) error {
 	return groth16_bls12377.VerifyFolded(proof, vk.(*groth16_bls12377.VerifyingKey), publicWitness)
 }
 
-func FoldProofs(proofs []Proof, vk VerifyingKey) (cs_bls12377.FoldedProof, error) {
-	foldedProof := cs_bls12377.getInitialFoldProof(proofs[0])
+func FoldProofs(proofs []Proof, vk VerifyingKey) (FoldedProof, error) {
+	foldedProof := groth16_bls12377.getInitialFoldProof(proofs[0])
 	for i, _ := range proofs {
 		switch _proof := proofs[i].(type) {
 		case *groth16_bls12377.Proof:
