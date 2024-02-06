@@ -336,11 +336,3 @@ func FoldProof(proof1 *FoldedProof, proof2 *Proof, vk *VerifyingKey, opts ...bac
 
 	return foldedProof, nil
 }
-
-func getInitialFoldProof(proof *Proof) *FoldedProof {
-	foldedProof := &FoldedProof{}
-	foldedProof.Ar = proof.Ar
-	foldedProof.Bs = proof.Bs
-	foldedProof.Krs = proof.Krs
-	return foldedProof
-}

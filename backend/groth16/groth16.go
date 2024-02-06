@@ -178,7 +178,7 @@ func VerifyFolded(proof FoldedProof, foldingParameters FoldingParameters, vk Ver
 	return groth16_bls12377.VerifyFolded(proof.(*groth16_bls12377.FoldedProof), foldingParameters.(*groth16_bls12377.FoldingParameters), vk.(*groth16_bls12377.VerifyingKey), proofs_bls12377, witness_bls12377)
 }
 
-func FoldProofs(proofs []Proof, vk VerifyingKey) (FoldedProof, error) {
+func FoldProofs(proofs []Proof, vk VerifyingKey, opts ...backend.ProverOption) (FoldedProof, error) {
 	foldedProof := &groth16_bls12377.FoldedProof{}
 	proof0 := proofs[0].(*groth16_bls12377.Proof)
 	foldedProof.Ar = proof0.Ar
@@ -196,6 +196,14 @@ func FoldProofs(proofs []Proof, vk VerifyingKey) (FoldedProof, error) {
 		}
 	}
 	return foldedProof, nil
+}
+
+func GetFoldingParameters(proofs []Proof, vk VerifyingKey, publicWitness []witness.Witness, opts ...backend.ProverOption) ([]FoldingParameters, error) {
+	foldingParameters, err := groth16_bls12377.GetFoldingParameters(proofs[0], proofs[1], vk, publicWitness[0], publicWitness[1], opts...)
+	if err != nil {
+		return nil, err
+	}
+	return foldingParameters, nil
 }
 
 // Prove runs the groth16.Prove algorithm.
