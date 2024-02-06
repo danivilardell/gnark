@@ -216,7 +216,14 @@ func (vk *VerifyingKey) ExportSolidity(w io.Writer) error {
 	return errors.New("not implemented")
 }
 
-func GetFoldingParameters(proof1, proof2 *Proof, vk *VerifyingKey, publicWitness1, publicWitness2 PublicWitness, opts ...backend.VerifierOption) (*FoldingParameters, error) {
+func GetFoldingParameters(proof1, proof2 *Proof, vk *VerifyingKey, publicWitness1, publicWitness2 fr.Vector, opts ...backend.VerifierOption) (*FoldingParameters, error) {
+	witness1 := PublicWitness{}
+	witness1.Public = publicWitness1
+	witness1.SetStartingParameters()
+	witness2 := PublicWitness{}
+	witness2.Public = publicWitness2
+	witness2.SetStartingParameters()
+
 	opt, err := backend.NewVerifierConfig(opts...)
 	if err != nil {
 		return nil, fmt.Errorf("new verifier config: %w", err)
@@ -235,8 +242,8 @@ func GetFoldingParameters(proof1, proof2 *Proof, vk *VerifyingKey, publicWitness
 		return nil, err
 	}
 	C1C2 := make([]curve.G1Affine, 1)[0].Add(
-		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&proof2.Krs, &publicWitness1.mu),
-		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&proof1.Krs, &publicWitness2.mu),
+		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&proof2.Krs, &witness1.mu),
+		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&proof1.Krs, &witness2.mu),
 	)
 	fmt.Println("eC1C2")
 	C1C2d, err := curve.Pair([]curve.G1Affine{*C1C2}, []curve.G2Affine{vk.G2.deltaNeg})
@@ -255,8 +262,8 @@ func GetFoldingParameters(proof1, proof2 *Proof, vk *VerifyingKey, publicWitness
 		copy(commitmentPrehashSerialized2, proof2.Commitments[i].Marshal())
 		offset := curve.SizeOfG1AffineUncompressed
 		for j := range vk.PublicAndCommitmentCommitted[i] {
-			copy(commitmentPrehashSerialized1[offset:], publicWitness1.Public[vk.PublicAndCommitmentCommitted[i][j]-1].Marshal())
-			copy(commitmentPrehashSerialized2[offset:], publicWitness2.Public[vk.PublicAndCommitmentCommitted[i][j]-1].Marshal())
+			copy(commitmentPrehashSerialized1[offset:], witness1.Public[vk.PublicAndCommitmentCommitted[i][j]-1].Marshal())
+			copy(commitmentPrehashSerialized2[offset:], witness2.Public[vk.PublicAndCommitmentCommitted[i][j]-1].Marshal())
 			offset += fr.Bytes
 		}
 		opt.HashToFieldFn.Write(commitmentPrehashSerialized1[:offset])
@@ -272,15 +279,15 @@ func GetFoldingParameters(proof1, proof2 *Proof, vk *VerifyingKey, publicWitness
 		var res1, res2 fr.Element
 		res1.SetBytes(hashBts1[:nbBuf])
 		res2.SetBytes(hashBts2[:nbBuf])
-		publicWitness1.Public = append(publicWitness1.Public, res1)
-		publicWitness2.Public = append(publicWitness2.Public, res2)
+		witness1.Public = append(witness1.Public, res1)
+		witness2.Public = append(witness2.Public, res2)
 	}
 
 	fmt.Println("eKrsδ1")
 	fmt.Println(len(vk.G1.K[1:]))
-	fmt.Println(len(publicWitness1.Public))
+	fmt.Println(len(witness1.Public))
 	var kSum1 curve.G1Jac
-	if _, err := kSum1.MultiExp(vk.G1.K[1:], publicWitness1.Public, ecc.MultiExpConfig{}); err != nil {
+	if _, err := kSum1.MultiExp(vk.G1.K[1:], witness1.Public, ecc.MultiExpConfig{}); err != nil {
 		return nil, err
 	}
 	kSum1.AddMixed(&vk.G1.K[0])
@@ -292,7 +299,7 @@ func GetFoldingParameters(proof1, proof2 *Proof, vk *VerifyingKey, publicWitness
 
 	fmt.Println("eKrsδ2")
 	var kSum2 curve.G1Jac
-	if _, err := kSum2.MultiExp(vk.G1.K[1:], publicWitness2.Public, ecc.MultiExpConfig{}); err != nil {
+	if _, err := kSum2.MultiExp(vk.G1.K[1:], witness2.Public, ecc.MultiExpConfig{}); err != nil {
 		return nil, err
 	}
 	kSum2.AddMixed(&vk.G1.K[0])
@@ -303,12 +310,12 @@ func GetFoldingParameters(proof1, proof2 *Proof, vk *VerifyingKey, publicWitness
 	kSumAff2.FromJacobian(&kSum2)
 
 	H1H2 := make([]curve.G1Affine, 1)[0].Add(
-		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&kSumAff1, &publicWitness2.mu),
-		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&kSumAff2, &publicWitness1.mu),
+		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&kSumAff1, &witness1.mu),
+		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&kSumAff2, &witness2.mu),
 	)
 	H1H2g, err := curve.Pair([]curve.G1Affine{*H1H2}, []curve.G2Affine{vk.G2.gammaNeg})
 
-	mu1mu2 := new(big.Int).Mul(&publicWitness1.mu, new(big.Int).Mul(&publicWitness2.mu, big.NewInt(-2)))
+	mu1mu2 := new(big.Int).Mul(&witness1.mu, new(big.Int).Mul(&witness2.mu, big.NewInt(-2)))
 	emu1mu2 := make([]curve.GT, 1)[0].Exp(vk.e, mu1mu2)
 
 	T := A1B2.Mul(&A1B2, make([]curve.GT, 1)[0].Mul(

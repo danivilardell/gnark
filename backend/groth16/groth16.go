@@ -199,7 +199,7 @@ func FoldProofs(proofs []Proof, vk VerifyingKey, opts ...backend.ProverOption) (
 }
 
 func GetFoldingParameters(proofs []Proof, vk VerifyingKey, publicWitness []witness.Witness, opts ...backend.ProverOption) ([]FoldingParameters, error) {
-	foldingParameters, err := groth16_bls12377.GetFoldingParameters(proofs[0], proofs[1], vk, publicWitness[0], publicWitness[1], opts...)
+	foldingParameters, err := groth16_bls12377.GetFoldingParameters(proofs[0].(*groth16_bls12377.FoldedProof), proofs[1].(*groth16_bls12377.FoldedProof), vk.(*groth16_bls12377.VerifyingKey), publicWitness[0], publicWitness[1], opts...)
 	if err != nil {
 		return nil, err
 	}
