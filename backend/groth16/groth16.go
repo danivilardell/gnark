@@ -179,7 +179,11 @@ func VerifyFolded(proof FoldedProof, foldingParameters FoldingParameters, vk Ver
 }
 
 func FoldProofs(proofs []Proof, vk VerifyingKey) (FoldedProof, error) {
-	foldedProof := groth16_bls12377.getInitialFoldProof(proofs[0])
+	foldedProof := &groth16_bls12377.FoldedProof{}
+	proof0 := proofs[0].(*groth16_bls12377.Proof)
+	foldedProof.Ar = proof0.Ar
+	foldedProof.Bs = proof0.Bs
+	foldedProof.Krs = proof0.Krs
 	for i, _ := range proofs {
 		switch _proof := proofs[i].(type) {
 		case *groth16_bls12377.Proof:
