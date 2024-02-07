@@ -295,7 +295,7 @@ func GetFoldingParameters(kSumAff1 curve.G1Affine, proof1 *FoldedProof, proof2 *
 			&C1C2d, make([]curve.GT, 1)[0].Mul(
 				&H1H2g, emu1mu2))))
 
-	r := big.NewInt(12345)				// THIS SHOULD BE RANDOM!!! Fiat shamir?
+	r := big.NewInt(1)				// THIS SHOULD BE RANDOM!!! Fiat shamir?
 	
 	foldingPars := &FoldingParameters{}
 	foldingPars.T = *T
@@ -351,7 +351,7 @@ func GetkSumAff(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ..
 }
 
 func FoldProof(proof1 *FoldedProof, proof2 *Proof, vk *VerifyingKey, opts ...backend.VerifierOption) (*FoldedProof, error) {
-	r := big.NewInt(12345)				// THIS SHOULD BE RANDOM!!! Fiat shamir?
+	r := big.NewInt(1)				// THIS SHOULD BE RANDOM!!! Fiat shamir?
 	
 	//Compute the updated proof
 	foldedProof := &FoldedProof{}
