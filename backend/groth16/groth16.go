@@ -166,7 +166,8 @@ func Verify(proof Proof, vk VerifyingKey, publicWitness witness.Witness, opts ..
 	}
 }
 
-func VerifyFolded(proof FoldedProof, foldingParameters FoldingParameters, vk VerifyingKey, publicWitness []witness.Witness, proofs []Proof) error {
+// FIX FOLDING PARAMETERS FOR MORE THAN 2 PROOFS FOLDED
+func VerifyFolded(proof FoldedProof, foldingParameters []FoldingParameters, vk VerifyingKey, publicWitness []witness.Witness, proofs []Proof) error {
 	proofs_bls12377 := make([]groth16_bls12377.Proof, len(proofs))
 	for i, _proof := range proofs {
 		proofs_bls12377[i] = *_proof.(*groth16_bls12377.Proof)
@@ -175,7 +176,11 @@ func VerifyFolded(proof FoldedProof, foldingParameters FoldingParameters, vk Ver
 	for i, w := range publicWitness {
 		witness_bls12377[i] = w.Vector().(fr_bls12377.Vector)
 	}
-	return groth16_bls12377.VerifyFolded(proof.(*groth16_bls12377.FoldedProof), foldingParameters.(*groth16_bls12377.FoldingParameters), vk.(*groth16_bls12377.VerifyingKey), proofs_bls12377, witness_bls12377)
+	folding_pars_bls12377 := make([]groth16_bls12377.FoldingParameters, len(foldingParameters))
+	for i, f := range foldingParameters {
+		folding_pars_bls12377[i] = *f.(*groth16_bls12377.FoldingParameters)
+	}
+	return groth16_bls12377.VerifyFolded(proof.(*groth16_bls12377.FoldedProof), folding_pars_bls12377, vk.(*groth16_bls12377.VerifyingKey), proofs_bls12377, witness_bls12377)
 }
 
 func FoldProofs(proofs []Proof, vk VerifyingKey, opts ...backend.ProverOption) (FoldedProof, error) {

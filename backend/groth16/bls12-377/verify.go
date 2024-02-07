@@ -140,11 +140,13 @@ func Verify(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ...bac
 }
 
 // Verify verifies a proof with given VerifyingKey and publicWitness
-func VerifyFolded(foldedProof *FoldedProof, foldingParameters *FoldingParameters, vk *VerifyingKey, proofs []Proof ,publicWitness []fr.Vector) error {
+func VerifyFolded(foldedProof *FoldedProof, foldingParameters []FoldingParameters, vk *VerifyingKey, proofs []Proof, publicWitness []fr.Vector) error {
 
-	witness := PublicWitness{}
-	witness.Public = publicWitness[0]
-	witness.SetStartingParameters()
+	witness := make([]PublicWitness, len(publicWitness))
+	for i := range publicWitness {
+		witness[i].Public = publicWitness[i]
+		witness[i].SetStartingParameters()
+	}
 
 	log := logger.Logger().With().Str("curve", vk.CurveID().String()).Str("backend", "groth16").Logger()
 	start := time.Now()
@@ -164,7 +166,8 @@ func VerifyFolded(foldedProof *FoldedProof, foldingParameters *FoldingParameters
 	if err != nil {
 		return err
 	}
-	err = foldedWitness.foldWitnesses([]PublicWitness{witness, witness}, []FoldingParameters{startingFoldingPars, *foldingParameters}, *vk, []Proof{proofs[0], proofs[1]})
+	foldingParameters = append([]FoldingParameters{startingFoldingPars}, foldingParameters...)
+	err = foldedWitness.foldWitnesses(witness, foldingParameters, *vk, proofs)
 	if err != nil {
 		return err
 	}
