@@ -295,7 +295,6 @@ func GetFoldingParameters(kSumAff1 curve.G1Affine, proof1 *FoldedProof, proof2 *
 	foldingPars := &FoldingParameters{}
 	foldingPars.T = *T
 	foldingPars.R = *r
-	fmt.Println("folding_pars: ", foldingPars)
 	return foldingPars, kSumAff2, nil
 }
 
