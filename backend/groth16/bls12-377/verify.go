@@ -161,13 +161,11 @@ func VerifyFolded(foldedProof *FoldedProof, foldingParameters []FoldingParameter
 	foldedWitness := FoldedWitness{}
 	foldedWitness.mu = *big.NewInt(0)
 	foldedWitness.H = *make([]curve.G1Affine, 1)[0].ScalarMultiplication(&make([]curve.G1Affine, 1)[0], big.NewInt(0))
-	var err error
-	foldedWitness.E, err = curve.Pair([]curve.G1Affine{*make([]curve.G1Affine, 1)[0].ScalarMultiplication(&make([]curve.G1Affine, 1)[0], big.NewInt(0))}, make([]curve.G2Affine, 1))
-	if err != nil {
-		return err
-	}
+	
+	foldedWitness.E = *make([]curve.GT, 1)[0].SetOne()
 	foldingParameters = append([]FoldingParameters{startingFoldingPars}, foldingParameters...)
-	err = foldedWitness.foldWitnesses(witness, foldingParameters, *vk, proofs)
+
+	err := foldedWitness.foldWitnesses(witness, foldingParameters, *vk, proofs)
 	if err != nil {
 		return err
 	}
@@ -214,10 +212,7 @@ func (vk *VerifyingKey) ExportSolidity(w io.Writer) error {
 	return errors.New("not implemented")
 }
 
-func GetFoldingParameters(kSumAff1 curve.G1Affine, proof1 *FoldedProof, proof2 *Proof, vk *VerifyingKey, publicWitness1, publicWitness2 fr.Vector, opts ...backend.VerifierOption) (*FoldingParameters, curve.G1Affine, error) {
-	witness1 := PublicWitness{}
-	witness1.Public = publicWitness1
-	witness1.SetStartingParameters()
+func GetFoldingParameters(kSumAff1 curve.G1Affine, proof1 *FoldedProof, proof2 *Proof, vk *VerifyingKey, foldedWitness FoldedWitness, publicWitness2 fr.Vector, opts ...backend.VerifierOption) (*FoldingParameters, curve.G1Affine, error) {
 	witness2 := PublicWitness{}
 	witness2.Public = publicWitness2
 	witness2.SetStartingParameters()
@@ -238,7 +233,7 @@ func GetFoldingParameters(kSumAff1 curve.G1Affine, proof1 *FoldedProof, proof2 *
 		return nil, kSumAff1, err
 	}
 	C1C2 := make([]curve.G1Affine, 1)[0].Add(
-		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&proof2.Krs, &witness1.mu),
+		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&proof2.Krs, &foldedWitness.mu),
 		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&proof1.Krs, &witness2.mu),
 	)
 	C1C2d, err := curve.Pair([]curve.G1Affine{*C1C2}, []curve.G2Affine{vk.G2.deltaNeg})
@@ -282,12 +277,12 @@ func GetFoldingParameters(kSumAff1 curve.G1Affine, proof1 *FoldedProof, proof2 *
 	kSumAff2.FromJacobian(&kSum2)
 
 	H1H2 := make([]curve.G1Affine, 1)[0].Add(
-		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&kSumAff1, &witness1.mu),
+		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&kSumAff1, &foldedWitness.mu),
 		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&kSumAff2, &witness2.mu),
 	)
 	H1H2g, err := curve.Pair([]curve.G1Affine{*H1H2}, []curve.G2Affine{vk.G2.gammaNeg})
 
-	mu1mu2 := new(big.Int).Mul(&witness1.mu, new(big.Int).Mul(&witness2.mu, big.NewInt(-2)))
+	mu1mu2 := new(big.Int).Mul(&foldedWitness.mu, new(big.Int).Mul(&witness2.mu, big.NewInt(-2)))
 	emu1mu2 := make([]curve.GT, 1)[0].Exp(vk.e, mu1mu2)
 
 	T := A1B2.Mul(&A1B2, make([]curve.GT, 1)[0].Mul(
@@ -295,7 +290,7 @@ func GetFoldingParameters(kSumAff1 curve.G1Affine, proof1 *FoldedProof, proof2 *
 			&C1C2d, make([]curve.GT, 1)[0].Mul(
 				&H1H2g, emu1mu2))))
 
-	r := big.NewInt(1)				// THIS SHOULD BE RANDOM!!! Fiat shamir?
+	r := big.NewInt(12345)				// THIS SHOULD BE RANDOM!!! Fiat shamir?
 	
 	foldingPars := &FoldingParameters{}
 	foldingPars.T = *T
@@ -351,7 +346,7 @@ func GetkSumAff(proof *Proof, vk *VerifyingKey, publicWitness fr.Vector, opts ..
 }
 
 func FoldProof(proof1 *FoldedProof, proof2 *Proof, vk *VerifyingKey, opts ...backend.VerifierOption) (*FoldedProof, error) {
-	r := big.NewInt(1)				// THIS SHOULD BE RANDOM!!! Fiat shamir?
+	r := big.NewInt(12345)				// THIS SHOULD BE RANDOM!!! Fiat shamir?
 	
 	//Compute the updated proof
 	foldedProof := &FoldedProof{}
