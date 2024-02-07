@@ -432,7 +432,6 @@ func (foldedWitness *FoldedWitness) FoldWitnesses(publicWitness []PublicWitness,
 		kSumAff.FromJacobian(&kSum)
 
 		foldedWitness.H.Add(&foldedWitness.H, make([]curve.G1Affine, 1)[0].ScalarMultiplication(&kSumAff, &foldingParameters[i].R))
-		fmt.Println("witness", i, foldedWitness)
 	}
 
 	return nil

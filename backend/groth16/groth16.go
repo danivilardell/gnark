@@ -20,7 +20,6 @@
 package groth16
 
 import (
-	"fmt"
 	"io"
 	"math/big"
 
@@ -199,7 +198,11 @@ func FoldProofs(proofs []Proof, vk VerifyingKey, opts ...backend.ProverOption) (
 			if i == 0 {
 				continue
 			}
-			foldedProof, _ = groth16_bls12377.FoldProof(foldedProof, _proof, vk.(*groth16_bls12377.VerifyingKey))
+			var err error
+			foldedProof, err = groth16_bls12377.FoldProof(foldedProof, _proof, vk.(*groth16_bls12377.VerifyingKey))
+			if err != nil {
+				return nil, err
+			}
 		default:
 			panic("unrecognized R1CS curve type")
 		}
@@ -235,7 +238,7 @@ func GetFoldingParameters(proofs []Proof, vk VerifyingKey, publicWitness []witne
 			}
 			w, _ := publicWitness[i].Vector().(fr_bls12377.Vector)
 			var err error
-			foldingParameters[i-1], kSumAff, err = groth16_bls12377.GetFoldingParameters(kSumAff, foldedProof, proofs[i].(*groth16_bls12377.Proof), vk.(*groth16_bls12377.VerifyingKey), foldedWitness, w)
+			foldingParameters[i-1], kSumAff, err = groth16_bls12377.GetFoldingParameters(foldedWitness.H, foldedProof, proofs[i].(*groth16_bls12377.Proof), vk.(*groth16_bls12377.VerifyingKey), foldedWitness, w)
 			if err != nil {
 				return nil, err
 			}
@@ -244,7 +247,6 @@ func GetFoldingParameters(proofs []Proof, vk VerifyingKey, publicWitness []witne
 			witness.SetStartingParameters()
 			foldingPars := *foldingParameters[i-1].(*groth16_bls12377.FoldingParameters)
 			foldedWitness.FoldWitnesses([]groth16_bls12377.PublicWitness{witness}, []groth16_bls12377.FoldingParameters{foldingPars}, *vk.(*groth16_bls12377.VerifyingKey), []groth16_bls12377.Proof{*proofs[i].(*groth16_bls12377.Proof)})
-			fmt.Println("WWWitness", i, foldedWitness)
 			foldedProof, _ = groth16_bls12377.FoldProof(foldedProof, _proof, vk.(*groth16_bls12377.VerifyingKey))
 		default:
 			panic("unrecognized R1CS curve type")
