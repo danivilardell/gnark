@@ -424,8 +424,8 @@ func (foldedWitness *FoldedWitness) FoldWitnesses(publicWitness []PublicWitness,
 		}
 		kSum.AddMixed(&vk.G1.K[0])
 
-		for i := range proofs[i].Commitments {
-			kSum.AddMixed(&proofs[i].Commitments[i])
+		for j := range proofs[i].Commitments {
+			kSum.AddMixed(&proofs[i].Commitments[j])
 		}
 
 		var kSumAff curve.G1Affine
