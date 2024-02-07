@@ -224,7 +224,7 @@ func GetFoldingParameters(proofs []Proof, vk VerifyingKey, publicWitness []witne
 	foldedWitness := groth16_bls12377.FoldedWitness{}
 	foldedWitness.H = kSumAff
 	foldedWitness.E = *make([]curve.GT, 1)[0].SetOne()
-	foldedWitness.Mu = big.NewInt(1)
+	foldedWitness.Mu = *big.NewInt(1)
 
 	for i, _ := range proofs {
 		switch _proof := proofs[i].(type) {
@@ -238,7 +238,7 @@ func GetFoldingParameters(proofs []Proof, vk VerifyingKey, publicWitness []witne
 			if err != nil {
 				return nil, err
 			}
-			foldedWitness.FoldWitness([]groth16_bls12377.FoldedWitness{w}, []groth16_bls12377.FoldingParameters{foldingParameters[i-1]}, vk.(*groth16_bls12377.VerifyingKey), []groth16_bls12377.Proof{proofs[i]})
+			foldedWitness.FoldWitness([]groth16_bls12377.PublicWitness{w}, []groth16_bls12377.FoldingParameters{foldingParameters[i-1].(groth16_bls12377.FoldingParameters)}, vk.(*groth16_bls12377.VerifyingKey), []groth16_bls12377.Proof{proofs[i].(*groth16_bls12377.Proof)})
 			foldedProof, _ = groth16_bls12377.FoldProof(foldedProof, _proof, vk.(*groth16_bls12377.VerifyingKey))
 		default:
 			panic("unrecognized R1CS curve type")

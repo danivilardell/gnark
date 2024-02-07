@@ -379,7 +379,7 @@ func (vk *VerifyingKey) Precompute() error {
 	return nil
 }
 
-func (foldedWitness *FoldedWitness) foldWitnesses(publicWitness []PublicWitness, foldingParameters []FoldingParameters, vk VerifyingKey, proofs []Proof, opts ...backend.VerifierOption) error {
+func (foldedWitness *FoldedWitness) FoldWitnesses(publicWitness []PublicWitness, foldingParameters []FoldingParameters, vk VerifyingKey, proofs []Proof, opts ...backend.VerifierOption) error {
 	opt, err := backend.NewVerifierConfig(opts...)
 	if err != nil {
 		return fmt.Errorf("new verifier config: %w", err)

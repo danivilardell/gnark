@@ -165,7 +165,7 @@ func VerifyFolded(foldedProof *FoldedProof, foldingParameters []FoldingParameter
 	foldedWitness.E = *make([]curve.GT, 1)[0].SetOne()
 	foldingParameters = append([]FoldingParameters{startingFoldingPars}, foldingParameters...)
 
-	err := foldedWitness.foldWitnesses(witness, foldingParameters, *vk, proofs)
+	err := foldedWitness.FoldWitnesses(witness, foldingParameters, *vk, proofs)
 	if err != nil {
 		return err
 	}
