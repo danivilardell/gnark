@@ -21,6 +21,7 @@ package groth16
 
 import (
 	"io"
+	"math/big"
 
 	"github.com/consensys/gnark-crypto/ecc"
 	"github.com/consensys/gnark/backend"
@@ -219,8 +220,9 @@ func GetFoldingParameters(proofs []Proof, vk VerifyingKey, publicWitness []witne
 	foldingParameters := make([]FoldingParameters, len(proofs)-1)
 
 	foldedWitness := groth16_bls12377.FoldedWitness{}
-	foldedWitness.Public = publicWitness[0].Vector().(fr_bls12377.Vector)
-	foldedWitness.SetStartingParameters()
+	foldedWitness.H = kSumAff
+	foldedWitness.E = *make([]groth16_bls12377.GT, 1)[0].SetOne()
+	foldedWitness.mu = big.NewInt()
 
 	for i, _ := range proofs {
 		switch _proof := proofs[i].(type) {
