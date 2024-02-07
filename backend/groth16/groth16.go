@@ -53,6 +53,8 @@ import (
 	icicle_bn254 "github.com/consensys/gnark/backend/groth16/bn254/icicle"
 	groth16_bw6633 "github.com/consensys/gnark/backend/groth16/bw6-633"
 	groth16_bw6761 "github.com/consensys/gnark/backend/groth16/bw6-761"
+
+	curve "github.com/consensys/gnark-crypto/ecc/bls12-377"
 )
 
 type groth16Object interface {
@@ -221,8 +223,8 @@ func GetFoldingParameters(proofs []Proof, vk VerifyingKey, publicWitness []witne
 
 	foldedWitness := groth16_bls12377.FoldedWitness{}
 	foldedWitness.H = kSumAff
-	foldedWitness.E = *make([]groth16_bls12377.GT, 1)[0].SetOne()
-	foldedWitness.mu = big.NewInt()
+	foldedWitness.E = *make([]curve.GT, 1)[0].SetOne()
+	foldedWitness.Mu = big.NewInt(1)
 
 	for i, _ := range proofs {
 		switch _proof := proofs[i].(type) {

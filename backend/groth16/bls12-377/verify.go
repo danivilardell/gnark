@@ -159,7 +159,7 @@ func VerifyFolded(foldedProof *FoldedProof, foldingParameters []FoldingParameter
 
 	// fold public witness
 	foldedWitness := FoldedWitness{}
-	foldedWitness.mu = *big.NewInt(0)
+	foldedWitness.Mu = *big.NewInt(0)
 	foldedWitness.H = *make([]curve.G1Affine, 1)[0].ScalarMultiplication(&make([]curve.G1Affine, 1)[0], big.NewInt(0))
 	
 	foldedWitness.E = *make([]curve.GT, 1)[0].SetOne()
@@ -173,13 +173,13 @@ func VerifyFolded(foldedProof *FoldedProof, foldingParameters []FoldingParameter
 	// compute (eKrsδ, eArBs, ealphaBeta)
 	go func() {
 		var errML error
-		krs_times_mu := make([]curve.G1Affine, 1)[0].ScalarMultiplication(&foldedProof.Krs, &foldedWitness.mu)
+		krs_times_mu := make([]curve.G1Affine, 1)[0].ScalarMultiplication(&foldedProof.Krs, &foldedWitness.Mu)
 		doubleML, errML = curve.MillerLoop([]curve.G1Affine{*krs_times_mu, foldedProof.Ar}, []curve.G2Affine{vk.G2.deltaNeg, foldedProof.Bs})
 		chDone <- errML
 		close(chDone)
 	}()
 
-	gamma_neg_times_mu := make([]curve.G2Affine, 1)[0].ScalarMultiplication(&vk.G2.gammaNeg, &foldedWitness.mu)
+	gamma_neg_times_mu := make([]curve.G2Affine, 1)[0].ScalarMultiplication(&vk.G2.gammaNeg, &foldedWitness.Mu)
 	right, err := curve.MillerLoop([]curve.G1Affine{foldedWitness.H}, []curve.G2Affine{*gamma_neg_times_mu})
 	if err != nil {
 		return err
@@ -193,7 +193,7 @@ func VerifyFolded(foldedProof *FoldedProof, foldingParameters []FoldingParameter
 	right = curve.FinalExponentiation(&right, &doubleML)
 
 	// vk.e is e(α, β), we want e(α, β)^{-mu^2}
-	mu_sqrd := new(big.Int).Mul(&foldedWitness.mu, &foldedWitness.mu)
+	mu_sqrd := new(big.Int).Mul(&foldedWitness.Mu, &foldedWitness.Mu)
 	vk.e.Exp(vk.e, mu_sqrd)
 	vk.e.Inverse(&vk.e)
 
@@ -233,7 +233,7 @@ func GetFoldingParameters(kSumAff1 curve.G1Affine, proof1 *FoldedProof, proof2 *
 		return nil, kSumAff1, err
 	}
 	C1C2 := make([]curve.G1Affine, 1)[0].Add(
-		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&proof2.Krs, &foldedWitness.mu),
+		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&proof2.Krs, &foldedWitness.Mu),
 		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&proof1.Krs, &witness2.mu),
 	)
 	C1C2d, err := curve.Pair([]curve.G1Affine{*C1C2}, []curve.G2Affine{vk.G2.deltaNeg})
@@ -277,12 +277,12 @@ func GetFoldingParameters(kSumAff1 curve.G1Affine, proof1 *FoldedProof, proof2 *
 	kSumAff2.FromJacobian(&kSum2)
 
 	H1H2 := make([]curve.G1Affine, 1)[0].Add(
-		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&kSumAff1, &foldedWitness.mu),
+		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&kSumAff1, &foldedWitness.Mu),
 		make([]curve.G1Affine, 1)[0].ScalarMultiplication(&kSumAff2, &witness2.mu),
 	)
 	H1H2g, err := curve.Pair([]curve.G1Affine{*H1H2}, []curve.G2Affine{vk.G2.gammaNeg})
 
-	mu1mu2 := new(big.Int).Mul(&foldedWitness.mu, new(big.Int).Mul(&witness2.mu, big.NewInt(-2)))
+	mu1mu2 := new(big.Int).Mul(&foldedWitness.Mu, new(big.Int).Mul(&witness2.mu, big.NewInt(-2)))
 	emu1mu2 := make([]curve.GT, 1)[0].Exp(vk.e, mu1mu2)
 
 	T := A1B2.Mul(&A1B2, make([]curve.GT, 1)[0].Mul(

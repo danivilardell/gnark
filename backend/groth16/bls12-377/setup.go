@@ -101,7 +101,7 @@ type PublicWitness struct {
 type FoldedWitness struct {
 	H   curve.G1Affine
 	E   curve.GT
-	mu  big.Int
+	Mu  big.Int
 }
 
 type FoldingParameters struct {
@@ -388,7 +388,7 @@ func (foldedWitness *FoldedWitness) foldWitnesses(publicWitness []PublicWitness,
 		opt.HashToFieldFn = hash_to_field.New([]byte(constraint.CommitmentDst))
 	}
 	for i := range publicWitness {
-		foldedWitness.mu.Add(&foldedWitness.mu, big.NewInt(0).Mul(&publicWitness[i].mu, &foldingParameters[i].R))
+		foldedWitness.Mu.Add(&foldedWitness.Mu, big.NewInt(0).Mul(&publicWitness[i].mu, &foldingParameters[i].R))
 		rr := big.NewInt(0).Mul(&foldingParameters[i].R, &foldingParameters[i].R)
 		foldedWitness.E.Mul(&foldedWitness.E, make([]curve.GT, 1)[0].Mul(
 			make([]curve.GT, 1)[0].Exp(foldingParameters[i].T, &foldingParameters[i].R), 
