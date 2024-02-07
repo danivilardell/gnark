@@ -388,6 +388,7 @@ func (foldedWitness *FoldedWitness) foldWitnesses(publicWitness []PublicWitness,
 		opt.HashToFieldFn = hash_to_field.New([]byte(constraint.CommitmentDst))
 	}
 	for i := range publicWitness {
+		fmt.Println("Folded Witness: ", foldedWitness)
 		foldedWitness.mu.Add(&foldedWitness.mu, big.NewInt(0).Mul(&publicWitness[i].mu, &foldingParameters[i].R))
 		rr := big.NewInt(0).Mul(&foldingParameters[i].R, &foldingParameters[i].R)
 		foldedWitness.E.Mul(&foldedWitness.E, make([]curve.GT, 1)[0].Mul(
