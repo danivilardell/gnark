@@ -390,10 +390,12 @@ func (foldedWitness *FoldedWitness) FoldWitnesses(publicWitness []PublicWitness,
 	for i := range publicWitness {
 		foldedWitness.Mu.Add(&foldedWitness.Mu, big.NewInt(0).Mul(&publicWitness[i].mu, &foldingParameters[i].R))
 		rr := big.NewInt(0).Mul(&foldingParameters[i].R, &foldingParameters[i].R)
-		foldedWitness.E.Mul(&foldedWitness.E, make([]curve.GT, 1)[0].Mul(
+
+		foldedWitness.E = *make([]curve.GT, 1)[0].Mul(&foldedWitness.E, make([]curve.GT, 1)[0].Mul(
 			make([]curve.GT, 1)[0].Exp(foldingParameters[i].T, &foldingParameters[i].R), 
 			make([]curve.GT, 1)[0].Exp(publicWitness[i].E, rr),
 		))
+
 		maxNbPublicCommitted := 0
 		for _, s := range vk.PublicAndCommitmentCommitted { // iterate over commitments
 			maxNbPublicCommitted = utils.Max(maxNbPublicCommitted, len(s))
