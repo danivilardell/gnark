@@ -10,6 +10,8 @@ import (
 	"testing"
 
 	"github.com/consensys/gnark-crypto/ecc"
+	"github.com/consensys/gnark/frontend"
+	"github.com/consensys/gnark/std/algebra/emulated/sw_emulated"
 	"github.com/consensys/gnark/std/math/emulated"
 	"github.com/consensys/gnark/test"
 	"golang.org/x/crypto/cryptobyte"
@@ -59,6 +61,9 @@ func TestEcdsaP256PreHashed(t *testing.T) {
 	}
 	assert := test.NewAssert(t)
 	err := test.IsSolved(&circuit, &witness, ecc.BN254.ScalarField())
+
+	api := frontend.API(nil)
+	witness.Pub.Verify(api, sw_emulated.GetCurveParams[emulated.Secp256k1Fp](), &witness.Msg, &witness.Sig)
 	assert.NoError(err)
 
 }
