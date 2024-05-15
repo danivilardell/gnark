@@ -83,6 +83,7 @@ type FoldingParameters interface {
 type ProvingKey interface {
 	groth16Object
 	gnarkio.UnsafeReaderFrom
+	gnarkio.BinaryDumper
 
 	// NbG1 returns the number of G1 elements in the ProvingKey
 	NbG1() int
