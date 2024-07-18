@@ -1,4 +1,4 @@
-module github.com/danivilardell/gnark
+module github.com/danivilardell/gnark/v2
 
 go 1.21
 
