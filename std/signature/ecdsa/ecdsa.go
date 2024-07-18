@@ -1,8 +1,6 @@
 package ecdsa
 
 import (
-	"fmt"
-
 	"github.com/consensys/gnark/frontend"
 	"github.com/consensys/gnark/std/algebra/emulated/sw_emulated"
 	"github.com/consensys/gnark/std/math/emulated"
@@ -43,8 +41,6 @@ func (pk PublicKey[T, S]) Verify(api frontend.API, params sw_emulated.CurveParam
 	qx := baseApi.Reduce(&q.X)
 	qxBits := baseApi.ToBits(qx)
 	rbits := scalarApi.ToBits(&sig.R)
-	fmt.Println("qxBits", qxBits)
-	fmt.Println("rbits", rbits)
 	if len(rbits) != len(qxBits) {
 		panic("non-equal lengths")
 	}
